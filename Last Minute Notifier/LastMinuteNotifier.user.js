@@ -5,8 +5,8 @@
 // @description   Permet d'être averti quelques temps avant minuit si il reste des combats
 // @author        Twilight
 // @projectPage   https://github.com/Ebatsin/Leek-Wars/
-// @updateURL     https://github.com/Ebatsin/Leek-Wars/raw/master/Last%20Minute%20Notifier/LastMinuteNotifier.js
-// @downloadURL   https://github.com/Ebatsin/Leek-Wars/raw/master/Last%20Minute%20Notifier/LastMinuteNotifier.js
+// @updateURL     https://github.com/Ebatsin/Leek-Wars/raw/master/Last%20Minute%20Notifier/LastMinuteNotifier.user.js
+// @downloadURL   https://github.com/Ebatsin/Leek-Wars/raw/master/Last%20Minute%20Notifier/LastMinuteNotifier.user.js
 // @match         http://leekwars.com/*
 // @grant         none
 // ==/UserScript==
