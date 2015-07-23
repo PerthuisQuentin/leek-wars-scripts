@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          [Leek Wars] Last Minute Notifier
 // @namespace	  https://github.com/Ebatsin/Leek-Wars/
-// @version       0.9.1
+// @version       0.9.2
 // @description   Permet d'être averti quelques temps avant minuit si il reste des combats
 // @author        Twilight
 // @projectPage   https://github.com/Ebatsin/Leek-Wars/
@@ -27,14 +27,12 @@
 		if(typeof minutes === 'number') {
 			minutes = Math.abs(minutes % 1440); // 1440 minutes dans un jour
 			localStorage.setItem('LMN-pop-time', minutes);
-			LMN_MINUTES_BEFORE_MIDNIGHT = minutes;
+			LMN_minutesBeforeMidnight = minutes;
 			clearTimeout(LMN_currentTimeout);
 			LMN_createNotifEvent();
 			return true;
 		}
-		else {
-			return false;
-		}
+		return false;
 	};
 
 	var LMN_name = "Last Minute Notifier",
@@ -42,10 +40,12 @@
 		LMN_fail = "Suite à une erreur, il n'y aura pas d'annonce de fin de journée pour vos combats",
 		LMN_OKMsg = "OK", // toi aussi crée des variables utiles
 		LMN_toGardenMsg = "Aller au potager",
+		LMN_minutesBeforeMidnight = 20, // nombre de minutes avant minuit avant lesquelles la notif apparaîtra
 		LMN_drop, LMN_content, LMN_footer, LMN_cancel, LMN_toGarden, LMN_title, LMN_serverOffset, LMN_serverTime, LMN_currentTimeout;
 
 	var LMN_updateServerTime = function(callback) {
 		$.getJSON('http://api.geonames.org/timezoneJSON?formatted=true&lat=43.577244&lng=7.055041&username=demo&style=full', function(data) {
+			if(data.dstOffset === undefined) console.log('[LMN] Impossible d\'accéder au serveur de temps');
 			LMN_serverOffset = 3600000 * (((new Date()).getTimezoneOffset() / -60) - data.dstOffset);
 			LMN_serverTime = new Date(Date.now() - LMN_serverOffset);
 			callback(LMN_serverTime);
@@ -56,7 +56,7 @@
 		var LMN_todayTime = new Date();
 		LMN_todayTime.setDate(LMN_todayTime.getDate() + 1);
 		LMN_todayTime.setHours(0, 0, 0, 0);
-		LMN_todayTime = new Date(LMN_todayTime.getTime() - LMN_MINUTES_BEFORE_MIDNIGHT * 60000 - LMN_serverOffset);
+		LMN_todayTime = new Date(LMN_todayTime.getTime() - LMN_minutesBeforeMidnight * 60000 - LMN_serverOffset);
 
 		if (LMN_todayTime.getTime() > LMN_serverTime.getTime()) {
 			return LMN_todayTime;
@@ -142,10 +142,8 @@
 		LMN_hideNotif();
 		LMN_createNotifEvent(); // on initialise l'event
 	};
-
-	var LMN_MINUTES_BEFORE_MIDNIGHT = 20; // nombre de minutes avant minuit avant lesquelles la notif apparaîtra
 	
-	LMN_MINUTES_BEFORE_MIDNIGHT = parseInt(localStorage.getItem('LMN-pop-time')) || LMN_MINUTES_BEFORE_MIDNIGHT;
+	LMN_minutesBeforeMidnight = parseInt(localStorage.getItem('LMN-pop-time')) || LMN_minutesBeforeMidnight;
 
 	LMN_initDropdown();
 })();
