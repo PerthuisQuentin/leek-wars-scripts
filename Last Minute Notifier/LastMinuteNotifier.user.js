@@ -45,10 +45,18 @@
 
 	var LMN_updateServerTime = function(callback) {
 		$.getJSON('http://api.geonames.org/timezoneJSON?formatted=true&lat=43.577244&lng=7.055041&username=demo&style=full', function(data) {
-			if(data.dstOffset === undefined) console.log('[LMN] Impossible d\'accéder au serveur de temps');
-			LMN_serverOffset = 3600000 * (((new Date()).getTimezoneOffset() / -60) - data.dstOffset);
-			LMN_serverTime = new Date(Date.now() - LMN_serverOffset);
-			callback(LMN_serverTime);
+			if(data.dstOffset === undefined) {
+				console.log('[LMN] Impossible d\'accéder au serveur de temps');
+				// on présuppose qu'on est en france
+				LMN_serverOffset =  0;
+				LMN_serverTime = new Date();
+				callback(LMN_serverTime);
+			}
+			else {
+				LMN_serverOffset = 3600000 * (((new Date()).getTimezoneOffset() / -60) - data.dstOffset);
+				LMN_serverTime = new Date(Date.now() - LMN_serverOffset);
+				callback(LMN_serverTime);
+			}
 		});
 	};
 
