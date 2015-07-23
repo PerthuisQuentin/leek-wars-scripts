@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          [Leek Wars] Last Minute Notifier
 // @namespace	  https://github.com/Ebatsin/Leek-Wars/
-// @version       1.0
+// @version       0.9.1
 // @description   Permet d'être averti quelques temps avant minuit si il reste des combats
 // @author        Twilight
 // @projectPage   https://github.com/Ebatsin/Leek-Wars/
@@ -11,35 +11,54 @@
 // @grant         none
 // ==/UserScript==
 
+/*
+*	Disclaimer : Je passe une demie-heure à chaque changement d'heure pour savoir dans quel sens on doit tourner l'aiguille selon si on avance ou on recule d'heure
+*	Il est donc possible qu'il y ai des erreurs dues aux différentes timezone. Si le script ne fait pas ce qu'il doit faire, envoyez moi un MP, je corrigerai ça
+*/
+
 (function() {
-	var LMN_MINUTES_BEFORE_MIDNIGHT = 20; // nombre de minutes avant minuit avant lesquelles la notif apparaîtra
+
+	// pour changer le nombre de minutes avant minuit, ouvrir la console du navigateur (F12 dans chrome et firefox)
+	// dans l'onglet 'console', entrez : 
+	// LMN_setTimeBeforeMidnight(20)
+	// cela affichera la notification 20 minutes avant minuit
+
+	window.LMN_setTimeBeforeMidnight = function(minutes) {
+		if(typeof minutes === 'number') {
+			minutes = Math.abs(minutes % 1440); // 1440 minutes dans un jour
+			localStorage.setItem('LMN-pop-time', minutes);
+			LMN_MINUTES_BEFORE_MIDNIGHT = minutes;
+			clearTimeout(LMN_currentTimeout);
+			LMN_createNotifEvent();
+			return true;
+		}
+		else {
+			return false;
+		}
+	};
 
 	var LMN_name = "Last Minute Notifier",
 		LMN_message = "Il est tard et il te reste des combats, pense à aller les faire !",
 		LMN_fail = "Suite à une erreur, il n'y aura pas d'annonce de fin de journée pour vos combats",
 		LMN_OKMsg = "OK", // toi aussi crée des variables utiles
 		LMN_toGardenMsg = "Aller au potager",
-		LMN_drop, LMN_content, LMN_footer, LMN_cancel, LMN_toGarden;
+		LMN_drop, LMN_content, LMN_footer, LMN_cancel, LMN_toGarden, LMN_title, LMN_serverOffset, LMN_serverTime, LMN_currentTimeout;
 
-	/*
-	*	Cette fonction sert à rien pour le moment. Il faudrait qu'elle renvoit l'heure française (donc UTC+1 et en prenant en compte l'heure d'été).
-	*	Si vous avez des idées sur comment faire ça (sans passer par timezone-js qui est un peu overkill)
-	*/
-	var LMN_getUTC = function() {
-		var LMN_utc = new Date();
-		LMN_utc = new Date(Date.UTC(LMN_utc.getFullYear(), LMN_utc.getMonth(), LMN_utc.getDate(), LMN_utc.getHours(), LMN_utc.getMinutes(), LMN_utc.getSeconds()));
-		return new Date(LMN_utc.getTime() + LMN_utc.getTimezoneOffset() * 60000); // on se met à l'heure serveur (UTC+1)
+	var LMN_updateServerTime = function(callback) {
+		$.getJSON('http://api.geonames.org/timezoneJSON?formatted=true&lat=43.577244&lng=7.055041&username=demo&style=full', function(data) {
+			LMN_serverOffset = 3600000 * (((new Date()).getTimezoneOffset() / -60) - data.dstOffset);
+			LMN_serverTime = new Date(Date.now() - LMN_serverOffset);
+			callback(LMN_serverTime);
+		});
 	};
 
 	var LMN_getNextNotifDate = function() {
-		var LMN_utc = LMN_getUTC();
-
-		var LMN_todayTime = new Date(LMN_utc.getTime());
-		LMN_todayTime.setDate(LMN_utc.getDate() + 1);
+		var LMN_todayTime = new Date();
+		LMN_todayTime.setDate(LMN_todayTime.getDate() + 1);
 		LMN_todayTime.setHours(0, 0, 0, 0);
-		LMN_todayTime = new Date(LMN_todayTime.getTime() - LMN_MINUTES_BEFORE_MIDNIGHT * 60000);
+		LMN_todayTime = new Date(LMN_todayTime.getTime() - LMN_MINUTES_BEFORE_MIDNIGHT * 60000 - LMN_serverOffset);
 
-		if (LMN_todayTime.getTime() > LMN_utc.getTime()) {
+		if (LMN_todayTime.getTime() > LMN_serverTime.getTime()) {
 			return LMN_todayTime;
 		} 
 		else {
@@ -49,21 +68,23 @@
 	};
 
 	var LMN_createNotifEvent = function() {
-		setTimeout(function () {
-			_.get('garden/get/$', function (data) {
-				if (data.success) {
-					if (data.garden.solo_fights + data.garden.farmer_fights + data.garden.team_fights > 0) {
-						LMN_popNotif(LMN_message);
+		LMN_updateServerTime(function(serverTime) {
+			LMN_currentTimeout = setTimeout(function() {
+				_.get('garden/get/$', function(data) {
+					if(data.success) {
+						if(data.garden.solo_fights + data.garden.farmer_fights + data.garden.team_fights > 0) {
+							LMN_popNotif(LMN_message);
+						}
 					}
-				}
-				else {
-					LMN_popNotif(LMN_fail);
-				}
-			});
-			setTimeout(LMN_createNotifEvent, 5000); // juste par sécu, pour pas trigger le truc 2 fois
-		}, LMN_getNextNotifDate().getTime() - LMN_getUTC().getTime());
-		var LMN_tmp = LMN_getNextNotifDate();
-		window._LMN_next_pop = "[Last Minute Notifier] Le " + LMN_tmp.getDate() + ' à ' + LMN_tmp.getHours() + ':' + LMN_tmp.getMinutes();
+					else {
+						LMN_popNotif(LMN_fail);
+					}
+				});
+				setTimeout(LMN_createNotifEvent, 5000);
+			}, LMN_getNextNotifDate().getTime() - serverTime.getTime());
+			var LMN_tmp = LMN_getNextNotifDate();
+			window._LMN_next_pop = "[Last Minute Notifier] Le " + LMN_tmp.getDate() + ' à ' + LMN_tmp.getHours() + ':' + LMN_tmp.getMinutes();
+		});
 };
 
 	var LMN_popNotif = function(message) {
@@ -121,6 +142,10 @@
 		LMN_hideNotif();
 		LMN_createNotifEvent(); // on initialise l'event
 	};
+
+	var LMN_MINUTES_BEFORE_MIDNIGHT = 20; // nombre de minutes avant minuit avant lesquelles la notif apparaîtra
 	
+	LMN_MINUTES_BEFORE_MIDNIGHT = parseInt(localStorage.getItem('LMN-pop-time')) || LMN_MINUTES_BEFORE_MIDNIGHT;
+
 	LMN_initDropdown();
 })();
