@@ -1,157 +1,208 @@
 // ==UserScript==
-// @name          [Leek Wars] Last Minute Notifier
-// @namespace	  https://github.com/Ebatsin/Leek-Wars/
-// @version       0.9.3
+// @name		  [Leek Wars] Last Minute Notifier
+// @namespace	 https://github.com/Ebatsin/Leek-Wars/
+// @version	   0.9.5
 // @description   Permet d'être averti quelques temps avant minuit si il reste des combats
-// @author        Twilight
+// @author		Twilight
 // @projectPage   https://github.com/Ebatsin/Leek-Wars/
-// @updateURL     https://github.com/Ebatsin/Leek-Wars/raw/master/Last%20Minute%20Notifier/LastMinuteNotifier.user.js
+// @updateURL	 https://github.com/Ebatsin/Leek-Wars/raw/master/Last%20Minute%20Notifier/LastMinuteNotifier.user.js
 // @downloadURL   https://github.com/Ebatsin/Leek-Wars/raw/master/Last%20Minute%20Notifier/LastMinuteNotifier.user.js
-// @match         http://leekwars.com/*
-// @grant         none
+// @match		 http://leekwars.com/*
+// @grant		 none
 // ==/UserScript==
-
+ 
 /*
-*	Disclaimer : Je passe une demie-heure à chaque changement d'heure pour savoir dans quel sens on doit tourner l'aiguille selon si on avance ou on recule d'heure
-*	Il est donc possible qu'il y ai des erreurs dues aux différentes timezone. Si le script ne fait pas ce qu'il doit faire, envoyez moi un MP, je corrigerai ça
+*	   Disclaimer : Je passe une demie-heure à chaque changement d'heure pour savoir dans quel sens on doit tourner l'aiguille selon si on avance ou on recule d'heure
+*	   Il est donc possible qu'il y ai des erreurs dues aux différentes timezone. Si le script ne fait pas ce qu'il doit faire, envoyez moi un MP, je corrigerai ça
 */
-
+ 
 (function() {
-
-	// pour changer le nombre de minutes avant minuit, ouvrir la console du navigateur (F12 dans chrome et firefox)
-	// dans l'onglet 'console', entrez : 
-	// LMN_setTimeBeforeMidnight(20)
-	// cela affichera la notification 20 minutes avant minuit
-
-	window.LMN_setTimeBeforeMidnight = function(minutes) {
-		if(typeof minutes === 'number') {
-			minutes = Math.abs(minutes % 1440); // 1440 minutes dans un jour
-			localStorage.setItem('LMN-pop-time', minutes);
-			LMN_minutesBeforeMidnight = minutes;
-			clearTimeout(LMN_currentTimeout);
-			LMN_createNotifEvent();
-			return true;
-		}
-		return false;
+	var text = {
+			name: 'Last Minute Notifier',
+			message: 'Il est tard et il te reste des combats, pense à aller les faire !',
+			failMessage: 'Suite à une erreur, il n\'y aurai pas d\'annonce de fin de journée pour vos combats',
+			ok: 'OK', // toi aussi crée des variables utiles
+			toGarden: 'Aller au potager',
 	};
-
-	var LMN_name = "Last Minute Notifier",
-		LMN_message = "Il est tard et il te reste des combats, pense à aller les faire !",
-		LMN_fail = "Suite à une erreur, il n'y aura pas d'annonce de fin de journée pour vos combats",
-		LMN_OKMsg = "OK", // toi aussi crée des variables utiles
-		LMN_toGardenMsg = "Aller au potager",
-		LMN_minutesBeforeMidnight = 20, // nombre de minutes avant minuit avant lesquelles la notif apparaîtra
-		LMN_drop, LMN_content, LMN_footer, LMN_cancel, LMN_toGarden, LMN_title, LMN_serverOffset, LMN_serverTime, LMN_currentTimeout;
-
-	var LMN_updateServerTime = function(callback) {
+	var pop = {
+		drop: 0, content: 0, footer: 0, cancel: 0, toGarden: 0, title: 0
+	};
+	var server = {
+		offset: 0, time: 0
+	};
+	var currentTimeout;
+	var minutesBeforeMidnight = getPopTime(20);
+	var alreadyShown = localStorage.getItem('LMN.alreadyShown') == "true" || false;
+	var alreadyShownDate = localStorage.getItem('LMN.alreadyShownDate') || 0;
+   
+	function updateServerTime(callback) {
 		$.getJSON('http://api.geonames.org/timezoneJSON?formatted=true&lat=43.577244&lng=7.055041&username=demo&style=full', function(data) {
 			if(data.dstOffset === undefined) {
-				console.log('[LMN] Impossible d\'accéder au serveur de temps');
+				var currentTime = new Date();
+				console.error('[LMN] Impossible de se connecter au serveur de temps');
+				localStorage.setItem('LMN.log', '[' + currentTime.getDate() + '/' + (currentTime.getMonth() + 1) + ' ' + currentTime.getHours() + ':' + currentTime.getMinutes() + currentTime.getSeconds() + '] Impossible de se connecter au serveur de temps');
 				// on présuppose qu'on est en france
-				LMN_serverOffset =  0;
-				LMN_serverTime = new Date();
-				callback(LMN_serverTime);
+				server.offset =  0;
+				server.time = new Date();
+				callback(server.time);
 			}
 			else {
-				LMN_serverOffset = 3600000 * (((new Date()).getTimezoneOffset() / -60) - data.dstOffset);
-				LMN_serverTime = new Date(Date.now() - LMN_serverOffset);
-				callback(LMN_serverTime);
+				server.offset = 3600000 * (((new Date()).getTimezoneOffset() / -60) - data.dstOffset);
+				server.time = new Date(Date.now() - server.offset);
+				callback(server.time);
 			}
 		});
-	};
-
-	var LMN_getNextNotifDate = function() {
-		var LMN_todayTime = new Date();
-		LMN_todayTime.setDate(LMN_todayTime.getDate() + 1);
-		LMN_todayTime.setHours(0, 0, 0, 0);
-		LMN_todayTime = new Date(LMN_todayTime.getTime() - LMN_minutesBeforeMidnight * 60000 - LMN_serverOffset);
-
-		if (LMN_todayTime.getTime() > LMN_serverTime.getTime()) {
-			return LMN_todayTime;
-		} 
-		else {
-			LMN_todayTime.setDate(LMN_todayTime.getDate() + 1);
-			return LMN_todayTime;
+	}
+   
+	function getPopTime(defaultValue) {
+		return localStorage.getItem('LMN.nextPopTime') || defaultValue;
+	}
+   
+	function setPopTime(hours, minutes) {
+		if(typeof minutes !== 'number' || typeof hours !== 'number') {
+			return false;
 		}
-	};
-
-	var LMN_createNotifEvent = function() {
-		LMN_updateServerTime(function(serverTime) {
-			LMN_currentTimeout = setTimeout(function() {
+		minutes = Math.abs(minutes%60);
+		hours = Math.abs(hours%24);
+		minutesBeforeMidnight = 1440 - hours*60 - minutes;
+		localStorage.setItem('LMN.nextPopTime',  minutesBeforeMidnight);
+		clearTimeout(currentTimeout);
+		createNotifEvent();
+		return true;
+	}
+   
+	function getNextNotifDate() {
+		var notifTime = new Date();
+		notifTime.setDate(notifTime.getDate() + 1);
+		notifTime.setHours(0, 0, 0, 0);
+		var serverMidnight = new Date(notifTime.getTime() - server.offset);
+		notifTime = new Date(notifTime.getTime() - minutesBeforeMidnight * 60000 - server.offset);
+ 
+		// notifTime : Heure du prochain affichage de la notif. Heure serveur
+		// server.time : heure actuelle du serveur
+		// serverMidnight : Minuit, heure serveur
+		if (notifTime.getTime() > server.time.getTime()) {
+			return notifTime; // l'heure d'affichage de la notif est pas encore passée
+		}
+		else if(!alreadyShown && Date.now() < serverMidnight.getTime()) { // heure de la notif passée, mais minuit pas encore passé
+			localStorage.setItem('LMN.alreadyShown', true);
+			localStorage.setItem('LMN.alreadyShownDate', serverMidnight.getTime());
+			alreadyShown = true;
+			return new Date();
+		}
+		else { // minuit passé, ou notif déja affichée, on reporte l'affichage au lendemain
+			notifTime.setDate(notifTime.getDate() + 1);
+			return notifTime;
+		}
+	}
+   
+	function createNotifEvent() {
+		updateServerTime(function(serverTime) {
+			var tmp = getNextNotifDate();
+			currentTimeout = setTimeout(function() {
+				if(alreadyShown && serverTime.getTime() > alreadyShownDate) { // on a passé minuit, on reset le fait que la opp-in a déja popée
+						localStorage.setItem('LMN.alreadyShown', false);
+				}
 				_.get('garden/get/$', function(data) {
 					if(data.success) {
 						if(data.garden.solo_fights + data.garden.farmer_fights + data.garden.team_fights > 0) {
-							LMN_popNotif(LMN_message);
+							popNotif(text.message);
 						}
 					}
 					else {
-						LMN_popNotif(LMN_fail);
+						popNotif(text.failMessage);
 					}
 				});
-				setTimeout(LMN_createNotifEvent, 5000);
-			}, LMN_getNextNotifDate().getTime() - serverTime.getTime());
-			var LMN_tmp = LMN_getNextNotifDate();
-			window._LMN_next_pop = "[Last Minute Notifier] Le " + LMN_tmp.getDate() + ' à ' + LMN_tmp.getHours() + ':' + LMN_tmp.getMinutes();
+				setTimeout(createNotifEvent, 5000);
+			}, Math.max(tmp.getTime() - server.time.getTime(), 0));
+			window._LMN_next_pop = "[Last Minute Notifier] Le " + tmp.getDate() + ' à ' + tmp.getHours() + ':' + tmp.getMinutes();
 		});
-};
-
-	var LMN_popNotif = function(message) {
-		LMN_content.text(message);
-		LMN_drop.css('top', 0);
-	};
-
-	var LMN_hideNotif = function() {
-		LMN_drop.css('top', -LMN_drop.outerHeight());
-	};
-
-	var LMN_initDropdown = function() {
+	}
+   
+	function popNotif(message) {
+		pop.content.text(message);
+		pop.drop.css('top', 0);
+	}
+ 
+	function hideNotif() {
+		pop.drop.css('top', -pop.drop.outerHeight());
+	}
+   
+	function getHMFromM(minutes) {
+		return {
+			'hours': Math.floor((1440 - minutes)/60),
+			'minutes': (1440 - minutes)%60
+		};
+	}
+ 
+	function initDropdown() {
 		if(LW.farmer.id === undefined) {
-			setTimeout(LMN_initDropdown, 1000);
+			setTimeout(initDropdown, 1000);
 			return;
 		}
-		
+	   
+		LW.on('pageload', function() {
+			if(LW.currentPage === 'settings') {
+				 $('#settings-page .flex-container')
+				.first()
+				.append('<div class="column6"><div class="panel"><div class="header"><h2>[Userscript] Last Minute Notifier</h2></div><div class="content"><h4 style="text-align: left">Veuillez entrer l\'heure d\'affichage de la notification</h4><br><h4>Heures</h4><input type="number" id="LMN_hours"><br/><h4 style="margin-top: 0.6em">Minutes</h4><input type="number" id="LMN_minutes"><br></br></br><center><input type="submit" class="button green" value="Appliquer" id="LMN_apply"></center></div></div></div>');
+ 
+				$('#LMN_hours').val(getHMFromM(minutesBeforeMidnight).hours);
+				$('#LMN_minutes').val(getHMFromM(minutesBeforeMidnight).minutes);
+				$('#LMN_apply').click(function() {
+					if(setPopTime(parseInt($('#LMN_hours').val()), parseInt($('#LMN_minutes').val()))) {
+						_.toast('Heure de notification mise à jour');
+					}
+					else {
+						_.toast('Heures non valide');
+					}
+					$('#LMN_hours').val(getHMFromM(minutesBeforeMidnight).hours);
+					$('#LMN_minutes').val(getHMFromM(minutesBeforeMidnight).minutes);
+				});
+			}
+		});
+			   
 		// création du dropdown
-		LMN_drop = $(document.createElement('div'))
-						.css({width: '70%', position: 'fixed', left: '15%', top: '-1000px', 'background-image': 'url("http://leekwars.com/static/image/background.png")', 'z-index': 2000, 'transition': 'ease 0.6s top'})
-						.appendTo(document.body);
-		LMN_title = $(document.createElement('div'))
-						.text(LMN_name)
-						.css({'text-align': 'center', height: '3em', 'line-height': '3em', 'font-size': '2em', color: 'white', background: 'hsla(0, 0%, 100%, 0.2)'})
-						.appendTo(LMN_drop);
-		LMN_content = $(document.createElement('div'))
-						.css({padding: '1.5em', color: 'white', 'font-size': '1.5em', 'text-align': 'center'})
-						.appendTo(LMN_drop);
-		LMN_footer = $(document.createElement('div'))
-						.appendTo(LMN_drop);
-		LMN_cancel = $(document.createElement('button'))
-						.text(LMN_OKMsg)
-						.css({width: '50%', background: '#555', padding: '0.6em', color: '#eee', 'text-align': 'center', border: 'none', 'font-size': '1.5em', cursor: 'pointer'})
-						.click(LMN_hideNotif)
-						.hover(function() {
-							LMN_cancel.css('background', '#777');
-						}, function() {
-							LMN_cancel.css('background', '#555');
-						})
-						.appendTo(LMN_footer);
-		LMN_toGarden = $(document.createElement('button'))
-						.text(LMN_toGardenMsg)
-						.css({width: '50%', background: '#5FAD1B', padding: '0.6em', color: '#eee', 'text-align': 'center', border: 'none', 'font-size': '1.5em', cursor: 'pointer'})
-						.click(function() {
-							LMN_hideNotif();
-							LW.page('/garden');
-						})
-						.hover(function() {
-							LMN_toGarden.css('background', '#73D120');
-						}, function() {
-							LMN_toGarden.css('background', '#5FAD1B');
-						})
-						.appendTo(LMN_footer);
-
-		LMN_hideNotif();
-		LMN_createNotifEvent(); // on initialise l'event
-	};
-	
-	LMN_minutesBeforeMidnight = parseInt(localStorage.getItem('LMN-pop-time')) || LMN_minutesBeforeMidnight;
-
-	LMN_initDropdown();
+		pop.drop = $(document.createElement('div'))
+				.css({width: '70%', position: 'fixed', left: '15%', top: '-1000px', 'background-image': 'url("http://leekwars.com/static/image/background.png")', 'z-index': 2000, 'transition': 'ease 0.6s top'})
+				.appendTo(document.body);
+		pop.title = $(document.createElement('div'))
+				.text(text.name)
+				.css({'text-align': 'center', height: '3em', 'line-height': '3em', 'font-size': '2em', color: 'white', background: 'hsla(0, 0%, 100%, 0.2)'})
+				.appendTo(pop.drop);
+		pop.content = $(document.createElement('div'))
+				.css({padding: '1.5em', color: 'white', 'font-size': '1.5em', 'text-align': 'center'})
+				.appendTo(pop.drop);
+		pop.footer = $(document.createElement('div'))
+				.appendTo(pop.drop);
+		pop.cancel = $(document.createElement('button'))
+				.text(text.ok)
+				.css({width: '50%', background: '#555', padding: '0.6em', color: '#eee', 'text-align': 'center', border: 'none', 'font-size': '1.5em', cursor: 'pointer'})
+				.click(hideNotif)
+				.hover(function() {
+					pop.cancel.css('background', '#777');
+				}, function() {
+					pop.cancel.css('background', '#555');
+				})
+				.appendTo(pop.footer);
+		pop.toGarden = $(document.createElement('button'))
+				.text(text.toGarden)
+				.css({width: '50%', background: '#5FAD1B', padding: '0.6em', color: '#eee', 'text-align': 'center', border: 'none', 'font-size': '1.5em', cursor: 'pointer'})
+				.click(function() {
+					hideNotif();
+					LW.page('/garden');
+				})
+				.hover(function() {
+					pop.toGarden.css('background', '#73D120');
+				}, function() {
+					pop.toGarden.css('background', '#5FAD1B');
+				})
+				.appendTo(pop.footer);
+ 	
+ 		hideNotif();
+		createNotifEvent(); // on initialise l'event
+	}
+	   
+	initDropdown();
+   
 })();
