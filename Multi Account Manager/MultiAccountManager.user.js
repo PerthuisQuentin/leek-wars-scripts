@@ -24,7 +24,7 @@
 	}
 
 	function genDropDown() {
-		if(LW.farmer.id === undefined) {
+		if(LW.currentPage === undefined) {
 			setTimeout(genDropDown, 150);
 			return;
 		}
@@ -275,5 +275,5 @@
 		}
 	});
 
-	genDropDown();
+	LW.on('pageload', genDropDown);
 })();
