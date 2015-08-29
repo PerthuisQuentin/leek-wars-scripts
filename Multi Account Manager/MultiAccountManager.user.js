@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		  [Leek Wars] Multi-account manager
 // @namespace	 https://github.com/Ebatsin/Leek-Wars/
-// @version		0.1
+// @version		0.2
 // @description	Permet de passer facilement de comptes en comptes
 // @author		Twilight
 // @projectPage	https://github.com/Ebatsin/Leek-Wars/
@@ -21,6 +21,10 @@
 
 	function setAccounts(accounts) {
 		localStorage.setItem('MAM.accounts', JSON.stringify(accounts));
+	}
+
+	function getCurrentPage() {
+		return (LW.currentPage === 'signup' || LW.currentPage === 'login') ? '/' : document.location.toString().replace('http://leekwars.com', '');
 	}
 
 	function genDropDown() {
@@ -51,13 +55,15 @@
 
 		for(i = 0; i < currentAccounts.length; ++i) {
 			(function(i) {
-				var current = $(document.createElement('div')).css({					
+				var current = $(document.createElement('div')).css({
 					'box-sizing': 'border-box', cursor: 'pointer'
 				}).hover(function() {
 					$(this).css('background', '#5fad1b');
 				}, function() {
 					$(this).css('background', 'transparent');
 				}).click(function() {
+					var currentLocation = getCurrentPage();
+
 					if(LW.connected) {
 						LW.disconnect();	
 					}
@@ -66,7 +72,7 @@
 						_.post('farmer/login', {login: currentAccounts[i].pseudo, password: currentAccounts[i].password}, function(data) {
 							if(data.success) {
 								LW.connect(data.farmer, function() {
-									LW.page('/');
+									LW.page(currentLocation);
 									document.location.reload();
 									genDropDown();
 									genOptionList();
