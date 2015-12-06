@@ -1,0 +1,56 @@
+<!Doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Compteur de caractère</title>
+	<style>
+		h2,p,textarea{margin-left:10%}body,html{margin:0;height:100%;background-color:#f2f2f2;overflow:hidden}*{font-family:"Lucida Sans Unicode","Lucida Grande",sans-serif}textarea{width:80%;height:50%;font-family:"Lucida Console",Monaco,monospace}
+	</style>
+</head>
+<body>
+	<h2>Compteur de caractère</h2>
+	<p>Copier votre programme ci-dessous</p>
+	<textarea></textarea>
+	<p id="result"></p>
+	<script>
+		var area = document.querySelector('textarea');
+		var result = document.querySelector('#result');
+		
+		window.addEventListener('load', function() {
+			area.value = "";
+		});
+		
+		area.addEventListener('input', function() {
+			var value = area.value;
+			printResult(calcLength(value));
+		});
+
+		area.addEventListener('keydown', function(e) {
+			if(e.keyCode === 9) {
+				e.preventDefault();
+			    area.value = area.value.substring(0, area.selectionStart) + "\t" + area.value.substring(area.selectionEnd);
+				return;
+			}
+		});
+		
+		function calcLength(value) {
+			var addLength = 0;
+			return value.replace(/\/\*([^]*?)\*\/|\/\/[^\n]*/g, function(match) { // on supprime les chaines de caractères dans des commentaires
+				return match.replace(/\"[^"\\]*(?:\\.[^"\\]*)*\"|\'[^'\\]*(?:\\.[^'\\]*)*\'/g, '');
+			})
+			.replace(/\"[^"\\]*(?:\\.[^"\\]*)*\"|\'[^'\\]*(?:\\.[^'\\]*)*\'/g, function(match) { // on compte les chaînes de caractère
+				addLength += match.length;
+				return '';
+			}).replace(/\/\*([^]*?)\*\/|\/\/[^\n]*/g, '') // suppression des commentaires
+				.replace(/var |global | in |return /g, function(match) { // les espaces obligatoires
+				addLength += match.length;
+				return '';
+			}).replace(/[ \t\n]/g, '').length + addLength;// puis les espaces, les retours à la ligne et les tabulations
+		}
+		
+		function printResult(res) {
+			result.innerHTML = "Nombre de caractères : " + res;
+		}
+	</script>
+</body>
+</html>
