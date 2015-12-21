@@ -10,7 +10,7 @@
 // @match		 http://leekwars.com/*
 // @grant		 none
 // ==/UserScript==
- 
+
 (function() {
 
 	var currentAccounts = getAccounts(), dropdown;
@@ -34,7 +34,7 @@
 		}
 
 		var list, i;
-		
+
 		if(dropdown && dropdown.remove) {
 			dropdown.remove();
 		}
@@ -65,7 +65,7 @@
 					var currentLocation = getCurrentPage();
 
 					if(LW.connected) {
-						LW.disconnect();	
+						LW.disconnect();
 					}
 
 					setTimeout(function() { // ptit délais pour laisser le temps de revenir à l'écran de connexion
@@ -76,7 +76,7 @@
 									document.location.reload();
 									genDropDown();
 									genOptionList();
-								});					
+								});
 							}
 						});
 					}, 200); // Si votre connexion est lente, il peut s'avérer nécessaire d'augmenter ce nombre
@@ -201,33 +201,41 @@
 					})
 					.appendTo(footer);
 
-		var inputPseudo = $(document.createElement('input')).attr('placeholder', 'Pseudo').appendTo(content);
-		var inputPassword = $(document.createElement('input')).attr('placeholder', 'Mot de passe').appendTo(content);
+		var inputPseudo = $(document.createElement('input')).attr('placeholder', 'Pseudo').attr('type', 'text').appendTo(content);
+		var inputPassword = $(document.createElement('input')).attr('placeholder', 'Mot de passe').attr('type', 'password').appendTo(content);
+
+    function submitf() {
+      if(inputPassword.val().trim() !== '' && inputPseudo.val().trim() !== '') {
+        // on récupère l'id de ce compte
+        _.post('farmer/login', {login: inputPseudo.val(), password: inputPassword.val()}, function(data) {
+          if(data.success) {
+            callback({
+              pseudo: inputPseudo.val(),
+              password: inputPassword.val(),
+              id: data.farmer.id
+            });
+          }
+          else {
+            setTimeout(function() {
+              _.toast('Utilisateur inexistant');
+            }, 200);
+          }
+          blackground.remove();
+          popin.remove();
+        });
+      }
+    }
+
+    $(inputPseudo).add(inputPassword).on('keydown', function(e) {
+      if(e.which === 13) {
+        submitf();
+      }
+    });
 
 		var submit = $(document.createElement('button'))
 					.text('Valider')
 					.css({width: '50%', background: '#5FAD1B', padding: '0.6em', color: '#eee', 'text-align': 'center', border: 'none', 'font-size': '1.5em', cursor: 'pointer'})
-					.click(function() {
-						if(inputPassword.val().trim() !== '' && inputPseudo.val().trim() !== '') {
-							// on récupère l'id de ce compte
-							_.post('farmer/login', {login: inputPseudo.val(), password: inputPassword.val()}, function(data) {
-								if(data.success) {
-									callback({
-										pseudo: inputPseudo.val(),
-										password: inputPassword.val(),
-										id: data.farmer.id
-									});
-								}
-								else {
-									setTimeout(function() {
-										_.toast('Utilisateur inexistant');
-									}, 200);
-								}								
-								blackground.remove();
-								popin.remove();
-							});
-						}
-					})
+					.click(submitf)
 					.hover(function() {
 						$(this).css('background', '#73D120');
 					}, function() {
