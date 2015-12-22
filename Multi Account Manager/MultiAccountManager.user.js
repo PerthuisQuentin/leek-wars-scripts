@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		  [Leek Wars] Multi-account manager
 // @namespace	 https://github.com/Ebatsin/Leek-Wars/
-// @version		0.2
+// @version		0.3
 // @description	Permet de passer facilement de comptes en comptes
 // @author		Twilight
 // @projectPage	https://github.com/Ebatsin/Leek-Wars/
