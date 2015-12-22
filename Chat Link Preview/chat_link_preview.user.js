@@ -13,7 +13,7 @@
 // @require       http://code.jquery.com/jquery-2.1.4.min.js
 // ==/UserScript==
 
-var maxMediaHeight = 200; // hauteur maximale des images / vidéos / etc affichées dans le chat. N'affecte pas pastebin
+var maxMediaHeight = 300; // hauteur maximale des images / vidéos / etc affichées dans le chat. N'affecte pas pastebin
 
 // PRISM
 /* http://prismjs.com/download.html?themes=prism&languages=markup+css+clike+javascript+bash+c+csharp+cpp+ruby+ini+java+latex+markdown+objectivec+php+python+sql&plugins=line-numbers */
@@ -39,6 +39,8 @@ Prism.languages.sql={comment:{pattern:/(^|[^\\])(?:\/\*[\w\W]*?\*\/|(?:--|\/\/|#
 // ajout style PRISM
 GM_addStyle('pre.line-numbers,pre.line-numbers>code{position:relative}code[class*=language-],pre[class*=language-]{color:#000;font-family:Consolas,Monaco,"Andale Mono","Ubuntu Mono",monospace;direction:ltr;text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;line-height:1.5;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none}code[class*=language-] ::-moz-selection,code[class*=language-]::-moz-selection,pre[class*=language-] ::-moz-selection,pre[class*=language-]::-moz-selection{text-shadow:none;background:#b3d4fc}code[class*=language-] ::selection,code[class*=language-]::selection,pre[class*=language-] ::selection,pre[class*=language-]::selection{text-shadow:none;background:#b3d4fc}@media print{code[class*=language-],pre[class*=language-]{text-shadow:none}}pre[class*=language-]{padding:1em;margin:0;overflow:auto}:not(pre)>code[class*=language-],pre[class*=language-]{background:#f5f2f0}:not(pre)>code[class*=language-]{padding:.1em;border-radius:.3em;white-space:normal}.token.cdata,.token.comment,.token.doctype,.token.prolog{color:#708090}.token.punctuation{color:#999}.namespace{opacity:.7}.token.boolean,.token.constant,.token.deleted,.token.number,.token.property,.token.symbol,.token.tag{color:#905}.token.attr-name,.token.builtin,.token.char,.token.inserted,.token.selector,.token.string{color:#690}.language-css .token.string,.style .token.string,.token.entity,.token.operator,.token.url{color:#BF7F3F}.token.atrule,.token.attr-value,.token.keyword{color:#07a}.token.function{color:#DD4A68}.token.important,.token.regex,.token.variable{color:#e90}.token.bold,.token.important{font-weight:700}.token.italic{font-style:italic}.token.entity{cursor:help}pre.line-numbers{padding-left:3.8em;counter-reset:linenumber}.line-numbers .line-numbers-rows{position:absolute;pointer-events:none;top:0;font-size:100%;left:-3.8em;width:3em;letter-spacing:-1px;border-right:1px solid #999;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}.line-numbers-rows>span{pointer-events:none;display:block;counter-increment:linenumber}.line-numbers-rows>span:before{content:counter(linenumber);color:#999;display:block;padding-right:.8em;text-align:right}');
 GM_addStyle('div > pre{overflow:hidden;border:solid 1px hsl(0, 0%, 70%); border-radius: 10px;} div.arrow-right span, div.arrow-down span{display:inline-block;width: 0.7em;height:0.7em;background-image: url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iaXNvLTg4NTktMSI/PjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4IiB3aWR0aD0iMzczLjAwOHB4IiBoZWlnaHQ9IjM3My4wMDhweCIgdmlld0JveD0iMCAwIDM3My4wMDggMzczLjAwOCIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+PHBhdGggZmlsbD0iIzY2NiIgZD0iTTYxLjc5MiwyLjU4OEM2NC43NzEsMC44NjQsNjguMTA1LDAsNzEuNDQ0LDBjMy4zMywwLDYuNjYzLDAuODY0LDkuNjU1LDIuNTg4bDIzMC4xMTYsMTY3LjJjNS45NjMsMy40NDUsOS42NTYsOS44MjMsOS42NTYsMTYuNzE5YzAsNi44OTUtMy42ODMsMTMuMjcyLTkuNjU2LDE2LjcxM0w4MS4wOTksMzcwLjQyN2MtNS45NzIsMy40NDEtMTMuMzM0LDMuNDQxLTE5LjMwMiwwYy01Ljk3My0zLjQ1My05LjY2LTkuODMzLTkuNjYtMTYuNzI0VjE5LjMwNUM1Mi4xMzcsMTIuNDEzLDU1LjgxOCw2LjAzNiw2MS43OTIsMi41ODh6Ii8+PC9zdmc+); background-size: contain; margin-left: 7px;transition: ease transform 0.3s;} div.arrow-right + div{display:none} div.arrow-down span {transform: rotate(90deg);}');
+var rightArrowSVGURI = 'data:image/svg+xml;charset=utf-8;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iaXNvLTg4NTktMSI/PjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4IiB3aWR0aD0iNDQuMjM2cHgiIGhlaWdodD0iNDQuMjM2cHgiIHZpZXdCb3g9IjAgMCA0NC4yMzYgNDQuMjM2IiB4bWw6c3BhY2U9InByZXNlcnZlIj48Zz48cGF0aCBmaWxsPSIjY2NjY2NjIiBkPSJNMjIuMTE4LDQ0LjIzNkM5LjkyMiw0NC4yMzYsMCwzNC4zMTQsMCwyMi4xMThTOS45MjIsMCwyMi4xMTgsMHMyMi4xMTgsOS45MjIsMjIuMTE4LDIyLjExOFMzNC4zMTQsNDQuMjM2LDIyLjExOCw0NC4yMzZ6IE0yMi4xMTgsMS41QzEwLjc1LDEuNSwxLjUsMTAuNzQ5LDEuNSwyMi4xMThjMCwxMS4zNjgsOS4yNSwyMC42MTgsMjAuNjE4LDIwLjYxOGMxMS4zNywwLDIwLjYxOC05LjI1LDIwLjYxOC0yMC42MThDNDIuNzM2LDEwLjc0OSwzMy40ODgsMS41LDIyLjExOCwxLjV6Ii8+PHBhdGggZmlsbD0iI2NjY2NjYyIgZD0iTTE5LjM0MSwyOS44ODRjLTAuMTkyLDAtMC4zODQtMC4wNzMtMC41My0wLjIyYy0wLjI5My0wLjI5Mi0wLjI5My0wLjc2OCwwLTEuMDYxbDYuNzk2LTYuODA0bC02Ljc5Ni02LjgwM2MtMC4yOTItMC4yOTMtMC4yOTItMC43NjksMC0xLjA2MWMwLjI5My0wLjI5MywwLjc2OC0wLjI5MywxLjA2MSwwbDcuMzI1LDcuMzMzYzAuMjkzLDAuMjkzLDAuMjkzLDAuNzY4LDAsMS4wNjFsLTcuMzI1LDcuMzMzQzE5LjcyNSwyOS44MTEsMTkuNTMzLDI5Ljg4NCwxOS4zNDEsMjkuODg0eiIvPjwvZz48L3N2Zz4=';
+
 // on récupère toutes les url sur le chat
 // on les isole
 // on fait une requête pour savoir qui reconnais l'url
@@ -116,7 +118,7 @@ Sans requête :
 (function()
 {
 	var ressourceHandler = [
-		{
+		{ // pastebin
 			'match': function(url) {
 				var reg = new RegExp('https?:\/\/pastebin\.com\/.{1,}');
 				return reg.test(url);
@@ -142,7 +144,7 @@ Sans requête :
 				});
 			}
 		},
-		{
+		{ // prntscr
 			'match': function(url) {
 				var reg = new RegExp('(?:https?://)prntscr.com/.{1,}');
 				return reg.test(url);
@@ -157,13 +159,38 @@ Sans requête :
 					}
 				};
 			},
-			'post': function(elem) {
-				// do nothing
-			}
+			'post': postImage
+		},
+		{ // imgur
+			'match': function(url) {
+				var reg = new RegExp('(https?:\/\/(?:i\.)?imgur\.com\/(?:(?:gallery\/)|(?:a\/))?[^\/\n]{1,})');
+				return reg.test(url);
+			},
+			'request': function(url) {
+				// séparation de si gallery ou non
+				var galleryReg = new RegExp('\/gallery\/');
+				var idReg = new RegExp('https?:\/\/(?:i\.)?imgur\.com\/(?:(?:gallery\/)|(?:a\/))?([^.\n]+)');
+				var id = idReg.exec(url)[1];
+
+				var galery = galleryReg.exec(url) !== null;
+
+				return {
+					url: 'https://imgur.com/' + (galery ? 'a/' : '') + id,
+					handler: 'imgur',
+					loading: {
+						width: '100%',
+						height: '90px'
+					}
+				};
+			},
+			'post': postImage
 		}
 	];
 
 	var handler = {
+		/***************************************************************************
+		******************************** PASTEBIN **********************************
+		***************************************************************************/
 		'pastebin': function(data) {
 			// récupération du titre :
 			var titleReg = new RegExp('class="paste_box_line1" title="([^"]*)');
@@ -197,6 +224,9 @@ Sans requête :
 				content: elem
 			};
 		},
+		/***************************************************************************
+		******************************** PRNTSCR* **********************************
+		***************************************************************************/
 		'prntscr': function(data) {
 			var imgReg = new RegExp('(https?://i\.imgur\.com/[^"]+)');
 			var removedReg = new RegExp('https?://i\.imgur\.com/8tdUI8N\.png'); // ce que tu fais est immonde prnt...
@@ -215,33 +245,69 @@ Sans requête :
 
 			var img = document.createElement('img');
 			img.src = imgUrl[0];
-			$(img).css({
-				'max-width': '100%',
-				'max-height': maxMediaHeight + 'px',
-				'cursor': 'zoom-in'
-			});
-			$(img).attr('data-zoomed', false);
-
-			$(img).click(function() {
-				var current = $(this);
-				if(current.attr('data-zoomed') == 'true') {
-					current.attr('data-zoomed', false).css({
-						'max-height': maxMediaHeight + 'px',
-						'cursor': 'zoom-in'
-					});
-				}
-				else {
-					current.attr('data-zoomed', true).css({
-						'max-height': 'none',
-						'cursor': 'zoom-out'
-					});
-				}
-			});
 
 			return {
-				title: 'Prntscr - image',
+				title: 'Prntscr - Image',
 				content: img
 			};
+		},
+		/***************************************************************************
+		******************************** IMGUR *************************************
+		***************************************************************************/
+		'imgur': function(data) {
+			var removedReg = new RegExp('(<title> +imgur: the simple 404 page<\/title>)');
+			var titleReg = new RegExp('class="post-title[^-][^>]+>([^<]+)');
+			// retrieve the images AND the comment is there is one on the image
+			var imagesReg = new RegExp('src="\/\/([^"]+)"[^<]+</a>[^>]+>[^<]+<(?:p +class="post-image-description[^>]+>([^<]+))?', 'g');
+
+			if(removedReg.exec(data) !== null) {
+				return {
+					title: 'Cette image n\'existe pas.',
+					content: document.createElement('div'),
+					abort: true
+				};
+			}
+
+			// retrieve the first 10 images
+			var current;
+			var images = [];
+			while(current = imagesReg.exec(data)) { // vivement ES6 et la destructuration !
+				images.push({
+					url: current[1],
+					description: current[2]
+				});
+			}
+
+			if(images.length == 1 && images[0].description == null) { // une seule image et pas de description. Pas de viewer
+				var img = document.createElement('img');
+				img.src = 'https://' + images[0].url;
+				return {
+					'title': 'Imgur - Image',
+					content: img
+				};
+			}
+			else {
+				var contener = document.createElement('div');
+				for(var i = 0; i < images.length; ++i) {
+					(function() {
+						var c = document.createElement('div');
+						var im = document.createElement('img');
+						im.src = 'https://' + images[i].url;
+						if(images[i].description) {
+							var description = document.createElement('div');
+							description.innerHTML = images[i].description.trim();
+						}
+						c.appendChild(im);
+						if(description) c.appendChild(description);
+						contener.appendChild(c);
+					})();
+				}
+				return {
+					title: titleReg.exec(data)[1],
+					content: contener
+				}
+			}
+
 		}
 	};
 
@@ -271,11 +337,10 @@ Sans requête :
 			var elem = document.createElement('div');
 
 			cont.appendChild(title);
-			cont.appendChild(elem);
 
 			$(cont).css({
 				'border-left': 'solid 3px hsla(0, 0%, 0%, 0.2)',
-				'padding': '10px 0px 10px 15px',
+				'padding': '3px 0px 3px 15px',
 				'margin': '7px 0'
 			});
 
@@ -286,7 +351,7 @@ Sans requête :
 			});
 
 			$(elem).css({
-				'margin': '0.5em 0'
+				'margin': '0.5em 0 0 0'
 			})
 
 			var that = this;
@@ -298,6 +363,7 @@ Sans requête :
 					title.innerHTML = elems.title;
 					$(cont).insertAfter($(that));
 					if(!elems.abort) { // on ne fait pas le post-traitement si le handler a aborté
+						cont.appendChild(elem);
 						$(title).append('<span></span>');
 						$(title).addClass('arrow-right');
 						$(title).click(function() {
@@ -320,5 +386,112 @@ Sans requête :
 	}
 
 	setInterval(check, 400);
+
+
+	/* fonctions posts prédéfinies */
+	function postImage(img) {
+		var root = $(img);
+		if(img.tagName == 'DIV') {
+			img = $(img).find('img');
+			root.find('> div').css('display', 'none');
+		}
+		$(img).css({
+			'max-width': '100%',
+			'max-height': maxMediaHeight + 'px',
+			'cursor': 'zoom-in',
+			'border-radius': '7px'
+		});
+		$(img).attr('data-zoomed', false);
+
+		$(img).click(function() {
+			var current = $(this);
+			if(current.attr('data-zoomed') == 'true') {
+				current.attr('data-zoomed', false).css({
+					'max-height': maxMediaHeight + 'px',
+					'cursor': 'zoom-in'
+				});
+			}
+			else {
+				current.attr('data-zoomed', true).css({
+					'max-height': 'none',
+					'cursor': 'zoom-out'
+				});
+			}
+		});
+
+		// viewer
+		if(root[0].tagName == 'DIV') {
+			var elems = root.find('> div');
+
+			var toLeft = $(document.createElement('div'));
+			var toRight = $(document.createElement('div'));
+
+			root.append(toLeft);
+			root.append(toRight);
+			toLeft.add(toRight).css({
+				'transition': 'ease all 0.6s',
+				'width': '60px',
+				'height': '100%',
+				'background': 'hsla(0, 0%, 0%, 0.6) ' + 'url(' + rightArrowSVGURI + ')',
+				'background-position': 'center',
+				'background-repeat': 'no-repeat',
+				'position': 'absolute',
+				'top': 0,
+				'z-index': 2,
+				'cursor': 'pointer'
+			}).hover(function() {
+				$(this).css('background-color', 'hsla(0, 0%, 0%, 0.9)');
+			}, function() {
+				$(this).css('background-color', 'hsla(0, 0%, 0%, 0.6)');
+			});
+
+			toRight.css('right', 0);
+			toLeft.css('transform', 'rotate(180deg)');
+
+			root.css({
+				'width': '100%',
+				'min-height': maxMediaHeight + 'px',
+				'background-color': 'hsl(0, 0%, 10%)',
+				'border': 'solid 1px hsl(0, 0%, 0%)',
+				'border-radius': '7px',
+				'position': 'relative'
+			});
+
+			root.find('> div > div').css({
+				'color': 'hsl(0, 0%, 80%)',
+				'position': 'absolute',
+				'padding': '10px 5px',
+				'bottom': 0,
+				'left': '60px',
+				'right': '60px',
+				'background-color': 'hsla(0, 0%, 0%, 0.7)',
+			});
+
+			root.find('> div').css({
+				'text-align': 'center'
+			});
+
+			function setIndex(idx) {
+				elems.css('display', 'none');
+				$(elems[idx]).css('display', 'block');
+			}
+
+			root.attr('data-index', 0);
+
+			setIndex(0);
+
+			toRight.click(function() {
+				var newIndex = (parseInt(root.attr('data-index')) + 1)%elems.length;
+				root.attr('data-index', newIndex);
+				setIndex(newIndex);
+			});
+
+			toLeft.click(function() {
+				var newIndex = ((parseInt(root.attr('data-index')) - 1) + elems.length)%elems.length;
+				root.attr('data-index', newIndex);
+				setIndex(newIndex);
+			});
+		}
+	}
 
 })();
