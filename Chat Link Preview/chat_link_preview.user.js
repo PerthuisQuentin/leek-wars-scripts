@@ -278,7 +278,7 @@ Sans requête :
 				});
 			}
 
-			if(images.length == 1 && images[0].description == null) { // une seule image et pas de description. Pas de viewer
+			if(images.length <= 1 && images[0].description == null) { // une seule image et pas de description. Pas de viewer
 				var img = document.createElement('img');
 				img.src = 'https://' + images[0].url;
 				return {
