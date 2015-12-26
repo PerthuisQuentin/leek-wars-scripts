@@ -320,12 +320,12 @@ function getMaxMediaHeight() {
 
 
 			var data = JSON.parse(data.replace('\\"', '@'));
-			var url = data.uri.replace('@', '"').replace('\\/', '/');
+			var url = data.uri.replace('@', '"').replace('\\/', '/').replace('videos', 'video');
 
 			return {
 				'displayMethod': 'iframe-video',
 				'data': {
-					'url': 'https://player.vimeo.com' + url.replace('videos', 'video'),
+					'url': 'https://player.vimeo.com' + url,
 					'title': 'Vimeo - ' + data.title
 				}
 			};
