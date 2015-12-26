@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          [Leek Wars] Chat link preview
 // @namespace     https://github.com/Ebatsin/Leek-Wars/
-// @version       0.1
+// @version       0.2
 // @description   Permet d'afficher une preview des ressources linkées dans le chat
 // @author        Twilight
 // @projectPage   https://github.com/Ebatsin/Leek-Wars/
@@ -13,7 +13,731 @@
 // @require       http://code.jquery.com/jquery-2.1.4.min.js
 // ==/UserScript==
 
-var maxMediaHeight = 300; // hauteur maximale des images / vidéos / etc affichées dans le chat. N'affecte pas pastebin
+/*
+*	Attention ! Ce script est en version beta, il manque encore des fonctionnalités importantes
+*	Il peut rester des bugs, des liens pas supportés mais qui devraient l'être.
+*/
+
+/*
+*	Liens supportés :
+*	- Pastebin
+*	- Imgur (sauf les gifs de imgur et autres vidéos html5)
+*	- Prntscr
+*	- liens linkant directement vers une image au format: png, jpg, gif, bmp, svg
+*	- youtube
+*	- vimeo
+*
+*	Liens dont le support est prévu :
+*	- lien directs vers des vidéos html5
+*	- Imgur - gifv
+*	- Soundcloud
+*/
+
+/*
+*	Fonctionnement du script et ajouts de sites (faire une pull request pour ajouter le support d'un site)
+*	Pour des raisons de sécurité, ne pas utiliser de clés d'API. Le code du userscript est public.
+*
+*	Le userscript fonctionne de manière modulaire afin de pouvoir ajouter de manière (relativement)
+*	simple un site web ou une ressource.
+*
+*	Lorsqu'un lien est detecté dans le chat de leekwars, :
+*	1) il est récupéré.
+*	2) les matchers sont parcourus DANS l'ORDRE, l'url trouvée dans le chat est passée
+*		aux fonctions 'match' de chaque élément de matchers. Le premier qui retourne true
+*		confirme sa capacité à gérer cette url.
+*	3) Cette url est ensuite donnée à la fonction 'request' du même élément de matchers.
+*		Il peut retourner plusieurs valeurs:
+*		i) Si le lien n'est pas valide, il peut retourner un objet contenant un seul champ
+*			abort : {
+*				'show': <afficher l'unfurl, malgré l'abort (true | false)>
+*				'title': <le titre à afficher pour l'unfurl>
+*				'description': <la description à afficher pour l'unfurl (pas encore supporté)>
+*			}
+*		ii) Si le lien envoie directement vers la ressource et qu'elle ne nécessite pas de $
+*			pré-traitement (une image par exemple), un objet est retourné :
+*			{
+*				'displayMethod': <la displayMethod à utiliser>
+*				'data': <un objet contenant les informations à destination de la displayMethod>
+*			}
+*			ce que sont les displayMethod sera vu plus loin
+*		iii) Si le lien envoie directement vers la ressource mais qu'elle nécessite du
+*			pré-traitement, un objet est retourné :
+*			{
+*				'handler': <le handler à qui passer l'url récupérée>
+*				'url': <l'url à passer au handler>
+*				'loadURL': false // indique que c'est l'url qui est passée et non ce qu'elle référence
+*			}
+*		iv) Si le lien envoie vers une ressource qui doit être chargée (par exemple, une
+*			page web contenant l'info recherchée), un objet doit être retourné :
+*			{
+*				'handler': <le handler à qui passer ce que référence l'url récupérée>
+*				'url': <l'url de ce qui doit être chargé (le résultat text du xmlhttprequest
+*						sera donné au handler)>
+*			}
+*	4) Si un handler a été appelé à l'étape précedente, il peut recevoir soit une url, soit
+*		la réponse text de XMLHttpRequest. Il peut alors effectuer un traitement sur ce qui lui
+*		est passé. Il peut retourner les même objets que la fonction request (y comprit un abort)
+*		Il peut également retourne un nouveau type d'objet :
+*		{
+*			'request': <le nom de l'élément de l'objet matchers duquel on veut appeler la fonction
+*							request.>
+*			'url': <l'url à passer à la fonction request. Elle sera automatiquement vérifiée par
+*					la fonction match du même élément. Si match renvoie false, le traitement du lien
+*					est annulé>
+*		}
+*	5) Si une displayMethod a été appelée à l'une des étapes précédentes, il doit recevoir un objet
+*		data contenant les informations nécessaires (souvent au moins 'title').
+*		Il doit retourner un objet contenant 2 champs obligatoires et 2 champs optionnel :
+*		{
+*			'title': <le titre à afficher, c'est ce que l'utilisateur devra cliquer pour ouvrir l'unfurl>
+*			'elem': <un élément jQuery contenant l'intégralité de ce qui sera affiché sous l'unfurl
+*						il sera copié tel quel, il doit donc tout contenir>
+*			'description': optionnel <la description à afficher sous l'unfurl. Non supporté>
+*			'post': optionnel <le nom de la fonction post à appeler après l'ajout au DOM de elem>
+*		}
+*	6) Si un post a été demandé par une displayMethod, il sera appelé avec en seul paramètre
+*		l'élément qui vient d'être ajouté au DOM (celui généré par la displayMethod)
+*/
+
+function getMaxMediaHeight() {
+	return 300;
+}
+
+(function() {
+	var matchers = {
+		'pastebin': {
+			'match': function(url) {
+				var reg = /(?:https?:\/\/)?pastebin\.com\/(?:raw\/)?[a-zA-Z\d]+/;
+				return reg.test(url);
+			},
+			'request': function(url) {
+				var regId = /\.com(?:\/raw)?\/([\da-zA-Z]+)$/;
+				var id = regId.exec(url)[1];
+
+				return {
+					'url': 'https://pastebin.com/' + id,
+					'handler': 'pastebin'
+				};
+			}
+		},
+		'prntscr': {
+			'match': function(url) {
+				var reg = /https?:\/\/prntscr\.com\/[a-z\d]+$/;
+				return reg.test(url);
+			},
+			'request': function(url) {
+				return {
+					'url': url,
+					'handler': 'prntscr'
+				};
+			}
+		},
+		'imgur': {
+			'match': function(url) {
+				var reg = /https?:\/\/(?:i\.|m\.)?imgur\.com\/(?:gallery\/|a\/)?[A-Za-z\d]+(?:\.[a-z]{3,4}(?:\?\d+)?|\/layout\/grid)?\/?/;
+				return reg.test(url);
+			},
+			'request': function(url) {
+				// si c'est une image, on récupère l'image directement.
+				// si c'est une gallerie, on passe par la vue en grille pour avoir toutes les images de la gallerie
+				var regId = /\.com\/(?:gallery\/|a\/)?([^\.\/\n]+)/;
+				var regGallery = /\.com\/(gallery|a)\//;
+
+				var id = regId.exec(url)[1];
+				var isGallery = regGallery.exec(url) !== null;
+
+				return {
+					'url': (isGallery) ? 'https://imgur.com/a/' + id + '/layout/grid' : 'https://imgur.com/' + id,
+					'handler': 'imgur'
+				};
+			}
+		},
+		'youtube': {
+			'match': function(url) {
+				var reg = /https?:\/\/(?:m\.|www\.)?youtu(?:be\.com|\.be)\/(?:watch)?(?:\?v=)?[a-zA-Z\d]+(?:&[a-zA-Z\d]+=[a-zA-Z\d]+)*/;
+				return reg.test(url);
+			},
+			'request': function(url) {
+				/*var regIds = /(?:\.be\/|watch\?v=)([a-zA-Z\d]+)(?:.*list=([a-zA-Z\d]+))?/;
+				var ids = regIds.exec(url);
+
+				if(ids === null) {
+					return {
+						'abort': {
+							'title': 'Youtube - Cette vidéo n\'existe pas.',
+							'show': true
+						}
+					};
+				}
+
+				return {
+					'displayMethod': 'iframe-video',
+					'data': {
+						'url': 'https://www.youtube.com/embed/' + ids[1] + (ids[2] ? '?list=' + ids[2] : '')
+					}
+				};*/
+				return {
+					'handler': 'youtube',
+					'url': 'https://www.youtube.com/oembed?url=' + url + '&format=json'
+				};
+			}
+		},
+		'basic-image': {
+			'match': function(url) {
+				var reg = /.*\.(?:png|jpe?g|gif|bmp|svg)(?:\/|\?.*|#.*)*$/i;
+				return reg.test(url);
+			},
+			'request': function(url) {
+				return {
+					'displayMethod': 'basic-image',
+					'data': {
+						'title': 'Image',
+						'url': url
+					}
+				};
+			}
+		}
+	};
+
+	var handlers = {
+		'pastebin': function(data) {
+			if((/id="content_left">[^<]*<[^>]*>([^<]*)/).exec(data)[1].trim().length !== 0) {
+				return {
+					abort: {
+						'title': 'Ce paste n\'existe plus',
+						'show': true
+					}
+				};
+			}
+
+			return {
+				'displayMethod': 'pastebin',
+				'data': {
+					'language': (/h_640"><a href=".*margin:0">([^<]*)/).exec(data)[1],
+					'title': (/class="paste_box_line1" title="([^"]*)/).exec(data)[1],
+					'code': (/id="paste_code"[^>]*>([^]*)<\/textarea>/m).exec(data)[1]
+				}
+			};
+		},
+		'prntscr': function(data) {
+			var imgReg = /(https?:\/\/i\.imgur\.com\/[^"]+)/;
+			var removedReg = /https?:\/\/i\.imgur\.com\/8tdUI8N\.png/; // j'espère que tu as honte de toi prntscr...
+
+			var removed = removedReg.exec(data);
+			var imgUrl = imgReg.exec(data);
+
+			// l'image n'existe pas
+			if(removed !== null) {
+				return {
+					'abort': {
+						'title': 'Prntscr - Cette image n\'existe pas.',
+						'show': true
+					}
+				};
+			}
+
+			return {
+				'displayMethod': 'basic-image',
+				'data': {
+					'title': 'Prntscr - Image',
+					'url': imgUrl
+				}
+			};
+		},
+		'imgur': function(data) {
+			var dataReg = /images? +: +({.*),\n/;
+			var titleReg = /<title>[\n ]+(.*) - .*Imgur<\/title>/;
+			var existsReg = /(<title> +imgur: +the simple 404 page<\/title>)/;
+
+
+			if(existsReg.exec(data) !== null) {
+				return {
+					'abort': {
+						'title': 'Imgur - Cette image n\'existe pas.',
+						'show': true
+					}
+				};
+			}
+
+			var imgData = JSON.parse(dataReg.exec(data)[1]);
+
+			// it's an album
+			if(imgData.images) {
+				var title = titleReg.exec(data);
+				title = title ? 'Imgur - ' + title[1] : 'Imgur - Album';
+				imgData = imgData.images;
+
+				var ret = [];
+				for(var i = 0; i < imgData.length; ++i) {
+					ret.push({
+						'description': imgData[i].description,
+						'url': 'https://i.imgur.com/' + imgData[i].hash + imgData[i].ext,
+						'title': imgData[i].title
+					});
+				}
+
+				return {
+					'displayMethod': 'gallery-image',
+					'data': {
+						'title': title,
+						'images': ret
+					}
+				};
+			}
+			else {
+				return {
+					'displayMethod': 'basic-image',
+					'data': {
+						'title': imgData.title ? 'Imgur - ' + imgData.title : 'Imgur - Image',
+						'url': 'https://i.imgur.com/' + imgData.hash + imgData.ext
+					}
+				};
+			}
+		},
+		'youtube': function(data) {
+			if(data.trim().toLowerCase() === 'not found') {
+				return {
+					abort: {
+						'title': 'Youtube - Cette vidéo n\'existe pas.',
+						'show': true
+					}
+				};
+			}
+
+			var data = JSON.parse(data.replace('\\"', '@'));
+			var url = $(data.html.replace('@', '"')).attr('src'); // ça drop les infos de playlist :(
+			return {
+				'displayMethod': 'iframe-video',
+				'data': {
+					'url': url,
+					'title': 'Youtube - ' + data.title.replace('@', '"')
+				}
+			};
+		}
+	};
+
+	var displayMethods = {
+		'pastebin': function(data) {
+			var elem = $(document.createElement('pre'));
+			var code = $(document.createElement('code'));
+
+			elem.add(code).addClass('language-' + data.language.toLowerCase()).addClass('line-numbers');
+
+			code.html(data.code);
+			elem.append(code);
+
+			return {
+				'title': (data.title.toLowerCase() === 'unknown') ? 'Pastebin - Sans titre' : 'Pastebin - ' + data.title.trim(),
+				'elem': elem,
+				'post': 'pastebin'
+			};
+		},
+		'iframe-video': function(data) {
+			var wrapper = $(document.createElement('div')); // permet d'avoir des vidéos à largeur fluide
+			var frame = $(document.createElement('iframe'));
+
+			wrapper.addClass('clp-fluid-iframe');
+
+			frame.attr('src', data.url);
+			frame.attr('allowfullscreen', 'true');
+			frame.attr('frameborder', '0');
+
+			wrapper.append(frame);
+
+			return {
+				'title': data.title,
+				'elem': wrapper
+			};
+		},
+		'basic-image': function(data) {
+			var img = $(document.createElement('img'));
+			img.attr('src', data.url).addClass('clp-basic-image');
+			img.click(function() {
+				$(this).toggleClass('clp-image-zoomed');
+			});
+
+			return {
+				'title': data.title,
+				'elem': img
+			}
+		},
+		'gallery-image': function(data) {
+			var cont = $(document.createElement('div'));
+			var images = $(document.createElement('div'));
+			var title = $(document.createElement('div'));
+			var toLeft = $(document.createElement('div'));
+			var toRight = $(document.createElement('div'));
+			var desc = $(document.createElement('div'));
+			var img = $(document.createElement('img'));
+
+			cont.addClass('clp-album-cont');
+			images.addClass('clp-album-images');
+			title.addClass('clp-album-title');
+			toLeft.addClass('clp-album-changer').addClass('clp-album-toleft');
+			toRight.addClass('clp-album-changer').addClass('clp-album-toright');
+			desc.addClass('clp-album-description');
+
+			images.append(img);
+			cont.append(images);
+			cont.append(title);
+			cont.append(desc);
+			cont.append(toLeft);
+			cont.append(toRight);
+
+			cont.attr('data-index', 0);
+
+			function setIndex(n) {
+				n = n%data.images.length;
+				cont.attr('data-index', n);
+				img.attr('src', data.images[n].url);
+				if(data.images[n].description.trim() == '') {
+					desc.addClass('clp-empty');
+				}
+				else {
+					desc.html(data.images[n].description);
+					desc.removeClass('clp-empty');
+				}
+				title.html('<span>[' + (n+1) + '/' + data.images.length + ']</span>' + data.images[n].title);
+			}
+
+			setIndex(0);
+
+			toLeft.click(function() {
+				setIndex(parseInt(cont.attr('data-index')) - 1 + data.images.length);
+			});
+
+			toRight.click(function() {
+				setIndex(parseInt(cont.attr('data-index')) + 1);
+			});
+
+			img.click(function() {
+				cont.toggleClass('zoomed');
+			});
+
+			return {
+				'title': data.title,
+				'elem': cont
+			};
+		}
+	};
+
+	var posts = {
+		'pastebin': function(elem) {
+			Prism.highlightElement(elem.find('code')[0], elem.find('code').html().length > 10000, function(){});
+		}
+	};
+
+	/*************************************************************************************************************************
+	**************************************** CORE FUNCTIONS -- NO NEED TO MODIFY *********************************************
+	*************************************************************************************************************************/
+
+	function check() {
+		var links = $('.chat-message-messages a:not(.clp-checked)');
+
+		links.each(function() {
+			var current = $(this);
+			current.addClass('clp-checked');
+			var url = current.attr('href');
+			var matcher = getMatcher(url);
+
+			if(!matcher) return; // on ne traite pas ce lien
+
+			gen({
+				'request': matcher,
+				'url': url
+			}, function(elem) {
+				if(elem === null) return;
+				// on insère l'élément généré
+				displayUnfurl(current, {
+					title: elem.title,
+					description: elem.description,
+					elem: elem.elem
+				});
+				// on appelle le post si nécessaire
+				if(elem.post) {
+					posts[elem.post]($(elem.elem));
+				}
+			});
+
+		});
+	}
+
+	function getRessource(ressource, callback, errorCallback) {
+		var ret = GM_xmlhttpRequest({
+			method: 'GET',
+			url: ressource,
+			onload: function(res) {
+				callback(res.responseText);
+			},
+			onerror: errorCallback ? errorCallback : function(){},
+			onabort: errorCallback ? errorCallback : function(){}
+		});
+	}
+
+	function getMatcher(url) {
+		for(var i in matchers) {
+			if(matchers.hasOwnProperty(i) && matchers[i].match(url)) {
+				return i;
+			}
+		}
+		return null;
+	}
+
+	function gen(data, callback) {
+		if(data.abort) {
+			callback({
+				'aborted': true,
+				'title': data.abort.title || 'Erreur',
+				'description': data.abort.description || null,
+				'show': data.abort.show || false
+			});
+			return;
+		}
+
+		if(data.request) {
+			// il doit y avoir une url fournie
+			if(!data.url || !matchers[data.request].match(data.url)) {
+				callback(null);
+				return;
+			}
+			gen(matchers[data.request].request(data.url), callback);
+		}
+		else if(data.handler) {
+			if(!data.url) {
+				callback(null);
+				return;
+			}
+			if(!data.loadURL) data.loadURL = true;
+			if(!data.loadURL) {
+				gen(handlers[data.handler](data.url), callback);
+			}
+			else {
+				getRessource(data.url, function(loaded) {
+					gen(handlers[data.handler](loaded), callback);
+				}, function() {
+					callback(null);
+				});
+			}
+		}
+		else if(data.data) {
+			if(!data.displayMethod) {
+				data.displayMethod = displayMethods['default'](data.data);
+			}
+			gen(displayMethods[data.displayMethod](data.data), callback);
+		}
+		else if(data.elem) { // l'élément a été généré
+			callback({
+				'elem': data.elem,
+				'post': data.post,
+				'title': data.title,
+				'description': data.description
+			});
+		}
+		callback(null);
+	}
+
+	function displayUnfurl(link, data) {
+		var cont = $(document.createElement('div'));
+		var title = $(document.createElement('div'));
+		var description = $(document.createElement('div'));
+		var elem = $(document.createElement('div'));
+
+		cont.addClass('clp-cont');
+		title.addClass('clp-title');
+		description.addClass('clp-description');
+		elem.addClass('clp-elem');
+		link.addClass('clp-folded');
+
+		title.html(data.title);
+		description.html(data.description);
+		elem.append(data.elem);
+
+		// ajout de la flèche à droite du titre
+		if(data.elem) {
+			title.append('<span></span>');
+			title.click(function() {
+				link.toggleClass('clp-folded');
+			});
+		}
+
+		cont.append(title);
+		if(data.description) cont.append(description);
+		if(data.elem) cont.append(elem);
+		cont.insertAfter(link);
+	}
+
+	setInterval(check, 100);
+
+	GM_addStyle('.clp-cont div > pre { \
+			overflow: hidden; \
+			border: solid 1px hsl(0, 0%, 70%); \
+			border-radius: 10px; \
+		} \
+		.clp-title span { \
+			display: inline-block; \
+			width: 0.7em; \
+			height: 0.7em; \
+			background-image: url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iaXNvLTg4NTktMSI/PjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4IiB3aWR0aD0iMzczLjAwOHB4IiBoZWlnaHQ9IjM3My4wMDhweCIgdmlld0JveD0iMCAwIDM3My4wMDggMzczLjAwOCIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+PHBhdGggZmlsbD0iIzY2NiIgZD0iTTYxLjc5MiwyLjU4OEM2NC43NzEsMC44NjQsNjguMTA1LDAsNzEuNDQ0LDBjMy4zMywwLDYuNjYzLDAuODY0LDkuNjU1LDIuNTg4bDIzMC4xMTYsMTY3LjJjNS45NjMsMy40NDUsOS42NTYsOS44MjMsOS42NTYsMTYuNzE5YzAsNi44OTUtMy42ODMsMTMuMjcyLTkuNjU2LDE2LjcxM0w4MS4wOTksMzcwLjQyN2MtNS45NzIsMy40NDEtMTMuMzM0LDMuNDQxLTE5LjMwMiwwYy01Ljk3My0zLjQ1My05LjY2LTkuODMzLTkuNjYtMTYuNzI0VjE5LjMwNUM1Mi4xMzcsMTIuNDEzLDU1LjgxOCw2LjAzNiw2MS43OTIsMi41ODh6Ii8+PC9zdmc+); \
+			background-size: contain; \
+			margin-left: 7px; \
+			transition: ease transform 0.3s; \
+			transform: rotate(90deg); \
+		} \
+		a.clp-folded + .clp-cont .clp-title span { \
+			transform: rotate(0deg); \
+		} \
+		a.clp-folded + .clp-cont .clp-elem { \
+			display: none; \
+		}\
+		.clp-cont { \
+			border-left: solid 3px hsla(0, 0%, 0%, 0.2); \
+			padding: 3px 0px 3px 15px; \
+			margin: 7px 0; \
+		} \
+		.clp-title { \
+			color: hsl(0, 0%, 40%); \
+			cursor: pointer; \
+			display: inline-block; \
+		} \
+		.clp-elem { \
+			margin: 0.5em 0 0 0; \
+		} \
+		.clp-basic-image { \
+			max-width: 100%; \
+			max-height: ' + getMaxMediaHeight() + 'px; \
+			cursor: zoom-in; \
+			border-radius: 7px; \
+		} \
+		.clp-basic-image.clp-image-zoomed { \
+			cursor: zoom-out; \
+			max-height: none; \
+		} \
+		.clp-album-cont { \
+			width: 100%; \
+			height: ' + getMaxMediaHeight() + 'px; \
+			position: relative; \
+			overflow: hidden; \
+		} \
+		.clp-album-images { \
+			display: flex; \
+			width: 100%; \
+			height: 100%; \
+			background-color: hsl(0, 0%, 11%); \
+			overflow: hidden; \
+		} \
+		.clp-album-title { \
+			top: calc(-1.2em - 11px); \
+			left: 60px; \
+			right: 60px; \
+			position: absolute; \
+			text-align: center; \
+			background-color: hsla(0, 0%, 0%, 0.9); \
+			color: white; \
+			font-size: 1.2em; \
+			padding: 5px; \
+			border-bottom: solid 1px black; \
+			height: 1.2em; \
+			overflow: hidden; \
+			text-overflow: ellipsis; \
+			padding: 5px 70px; \
+			white-space: nowrap; \
+		} \
+		.clp-album-title span { \
+			position: absolute; \
+			left: 10px; \
+		} \
+		.clp-album-description { \
+			position: absolute; \
+			bottom: -100%; \
+			left: 60px; \
+			right: 60px; \
+			background-color: hsla(0, 0%, 0%, 0.9); \
+			color: white; \
+			padding: 10px 20px; \
+			border-top: solid 1px black; \
+			text-shadow: 1px 1px black; \
+			max-height: calc(100% - 1.2em - 12px); \
+			overflow: hidden; \
+			text-overflow: ellipsis; \
+		} \
+		.clp-album-changer { \
+			position: absolute; \
+			background-color: hsla(0, 0%, 0%, 0.7); \
+			width: 60px; \
+			top: 0; \
+			bottom: 0; \
+			background-image: url(data:image/svg+xml;charset=utf-8;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iaXNvLTg4NTktMSI/PjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4IiB3aWR0aD0iNDQuMjM2cHgiIGhlaWdodD0iNDQuMjM2cHgiIHZpZXdCb3g9IjAgMCA0NC4yMzYgNDQuMjM2IiB4bWw6c3BhY2U9InByZXNlcnZlIj48Zz48cGF0aCBmaWxsPSIjY2NjY2NjIiBkPSJNMjIuMTE4LDQ0LjIzNkM5LjkyMiw0NC4yMzYsMCwzNC4zMTQsMCwyMi4xMThTOS45MjIsMCwyMi4xMTgsMHMyMi4xMTgsOS45MjIsMjIuMTE4LDIyLjExOFMzNC4zMTQsNDQuMjM2LDIyLjExOCw0NC4yMzZ6IE0yMi4xMTgsMS41QzEwLjc1LDEuNSwxLjUsMTAuNzQ5LDEuNSwyMi4xMThjMCwxMS4zNjgsOS4yNSwyMC42MTgsMjAuNjE4LDIwLjYxOGMxMS4zNywwLDIwLjYxOC05LjI1LDIwLjYxOC0yMC42MThDNDIuNzM2LDEwLjc0OSwzMy40ODgsMS41LDIyLjExOCwxLjV6Ii8+PHBhdGggZmlsbD0iI2NjY2NjYyIgZD0iTTE5LjM0MSwyOS44ODRjLTAuMTkyLDAtMC4zODQtMC4wNzMtMC41My0wLjIyYy0wLjI5My0wLjI5Mi0wLjI5My0wLjc2OCwwLTEuMDYxbDYuNzk2LTYuODA0bC02Ljc5Ni02LjgwM2MtMC4yOTItMC4yOTMtMC4yOTItMC43NjksMC0xLjA2MWMwLjI5My0wLjI5MywwLjc2OC0wLjI5MywxLjA2MSwwbDcuMzI1LDcuMzMzYzAuMjkzLDAuMjkzLDAuMjkzLDAuNzY4LDAsMS4wNjFsLTcuMzI1LDcuMzMzQzE5LjcyNSwyOS44MTEsMTkuNTMzLDI5Ljg4NCwxOS4zNDEsMjkuODg0eiIvPjwvZz48L3N2Zz4=); \
+			background-repeat: no-repeat; \
+			background-position: center; \
+			border-left: solid 1px black; \
+			cursor: pointer; \
+		} \
+		.clp-album-toright { \
+			right: -61px; \
+		} \
+		.clp-album-toleft { \
+			transform: rotate(180deg); \
+			left: -61px; \
+		} \
+		.clp-album-cont > * {\
+			transition: ease all 0.4s; \
+		} \
+		.clp-album-changer:hover { \
+			background-color: hsla(0, 0%, 0%, 0.9); \
+		} \
+		.clp-album-cont:hover .clp-album-toleft { \
+			left: 0; \
+		} \
+		.clp-album-cont:hover .clp-album-toright { \
+			right: 0; \
+		} \
+		.clp-album-cont:hover .clp-album-title:not(.clp-empty) { \
+			top: 0; \
+		} \
+		.clp-album-cont:hover .clp-album-description:not(.clp-empty) { \
+			bottom: 0; \
+		} \
+		.clp-album-cont .clp-album-images img { \
+			max-width: 100%; \
+			max-height: 100%; \
+			margin: auto; \
+			cursor: zoom-in; \
+		} \
+		.clp-album-cont.zoomed .clp-album-images img { \
+			cursor: zoom-out; \
+			width: 100%; \
+			max-height: none; \
+		} \
+		.clp-album-cont.zoomed { \
+			height: auto; \
+		} \
+		.clp-fluid-iframe.zoomed { \
+			position: relative; \
+			padding-top: 25px; \
+			padding-bottom: 56.25%; \
+			height: 0; \
+			width: 100%; \
+		} \
+		.clp-fluid-iframe { \
+			padding-bottom: ' + getMaxMediaHeight() + 'px; \
+			width: 53%; \
+			position: relative; \
+		} \
+		.clp-fluid-iframe iframe { \
+			position: absolute; \
+			top: 0; \
+			left: 0; \
+			width: 100%; \
+			height: 100%; \
+		}');
+
+})();
+
+
+
+
+
+
 
 // PRISM
 /* http://prismjs.com/download.html?themes=prism&languages=markup+css+clike+javascript+bash+c+csharp+cpp+ruby+ini+java+latex+markdown+objectivec+php+python+sql&plugins=line-numbers */
@@ -38,460 +762,4 @@ Prism.languages.sql={comment:{pattern:/(^|[^\\])(?:\/\*[\w\W]*?\*\/|(?:--|\/\/|#
 !function(){"undefined"!=typeof self&&self.Prism&&self.document&&Prism.hooks.add("complete",function(e){if(e.code){var t=e.element.parentNode,s=/\s*\bline-numbers\b\s*/;if(t&&/pre/i.test(t.nodeName)&&(s.test(t.className)||s.test(e.element.className))&&!e.element.querySelector(".line-numbers-rows")){s.test(e.element.className)&&(e.element.className=e.element.className.replace(s,"")),s.test(t.className)||(t.className+=" line-numbers");var n,a=e.code.match(/\n(?!$)/g),l=a?a.length+1:1,m=new Array(l+1);m=m.join("<span></span>"),n=document.createElement("span"),n.className="line-numbers-rows",n.innerHTML=m,t.hasAttribute("data-start")&&(t.style.counterReset="linenumber "+(parseInt(t.getAttribute("data-start"),10)-1)),e.element.appendChild(n)}}})}();
 // ajout style PRISM
 GM_addStyle('pre.line-numbers,pre.line-numbers>code{position:relative}code[class*=language-],pre[class*=language-]{color:#000;font-family:Consolas,Monaco,"Andale Mono","Ubuntu Mono",monospace;direction:ltr;text-align:left;white-space:pre;word-spacing:normal;word-break:normal;word-wrap:normal;line-height:1.5;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-hyphens:none;-moz-hyphens:none;-ms-hyphens:none;hyphens:none}code[class*=language-] ::-moz-selection,code[class*=language-]::-moz-selection,pre[class*=language-] ::-moz-selection,pre[class*=language-]::-moz-selection{text-shadow:none;background:#b3d4fc}code[class*=language-] ::selection,code[class*=language-]::selection,pre[class*=language-] ::selection,pre[class*=language-]::selection{text-shadow:none;background:#b3d4fc}@media print{code[class*=language-],pre[class*=language-]{text-shadow:none}}pre[class*=language-]{padding:1em;margin:0;overflow:auto}:not(pre)>code[class*=language-],pre[class*=language-]{background:#f5f2f0}:not(pre)>code[class*=language-]{padding:.1em;border-radius:.3em;white-space:normal}.token.cdata,.token.comment,.token.doctype,.token.prolog{color:#708090}.token.punctuation{color:#999}.namespace{opacity:.7}.token.boolean,.token.constant,.token.deleted,.token.number,.token.property,.token.symbol,.token.tag{color:#905}.token.attr-name,.token.builtin,.token.char,.token.inserted,.token.selector,.token.string{color:#690}.language-css .token.string,.style .token.string,.token.entity,.token.operator,.token.url{color:#BF7F3F}.token.atrule,.token.attr-value,.token.keyword{color:#07a}.token.function{color:#DD4A68}.token.important,.token.regex,.token.variable{color:#e90}.token.bold,.token.important{font-weight:700}.token.italic{font-style:italic}.token.entity{cursor:help}pre.line-numbers{padding-left:3.8em;counter-reset:linenumber}.line-numbers .line-numbers-rows{position:absolute;pointer-events:none;top:0;font-size:100%;left:-3.8em;width:3em;letter-spacing:-1px;border-right:1px solid #999;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}.line-numbers-rows>span{pointer-events:none;display:block;counter-increment:linenumber}.line-numbers-rows>span:before{content:counter(linenumber);color:#999;display:block;padding-right:.8em;text-align:right}');
-GM_addStyle('div > pre{overflow:hidden;border:solid 1px hsl(0, 0%, 70%); border-radius: 10px;} div.arrow-right span, div.arrow-down span{display:inline-block;width: 0.7em;height:0.7em;background-image: url(data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iaXNvLTg4NTktMSI/PjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4IiB3aWR0aD0iMzczLjAwOHB4IiBoZWlnaHQ9IjM3My4wMDhweCIgdmlld0JveD0iMCAwIDM3My4wMDggMzczLjAwOCIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+PHBhdGggZmlsbD0iIzY2NiIgZD0iTTYxLjc5MiwyLjU4OEM2NC43NzEsMC44NjQsNjguMTA1LDAsNzEuNDQ0LDBjMy4zMywwLDYuNjYzLDAuODY0LDkuNjU1LDIuNTg4bDIzMC4xMTYsMTY3LjJjNS45NjMsMy40NDUsOS42NTYsOS44MjMsOS42NTYsMTYuNzE5YzAsNi44OTUtMy42ODMsMTMuMjcyLTkuNjU2LDE2LjcxM0w4MS4wOTksMzcwLjQyN2MtNS45NzIsMy40NDEtMTMuMzM0LDMuNDQxLTE5LjMwMiwwYy01Ljk3My0zLjQ1My05LjY2LTkuODMzLTkuNjYtMTYuNzI0VjE5LjMwNUM1Mi4xMzcsMTIuNDEzLDU1LjgxOCw2LjAzNiw2MS43OTIsMi41ODh6Ii8+PC9zdmc+); background-size: contain; margin-left: 7px;transition: ease transform 0.3s;} div.arrow-right + div{display:none} div.arrow-down span {transform: rotate(90deg);}');
 var rightArrowSVGURI = 'data:image/svg+xml;charset=utf-8;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iaXNvLTg4NTktMSI/PjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4IiB3aWR0aD0iNDQuMjM2cHgiIGhlaWdodD0iNDQuMjM2cHgiIHZpZXdCb3g9IjAgMCA0NC4yMzYgNDQuMjM2IiB4bWw6c3BhY2U9InByZXNlcnZlIj48Zz48cGF0aCBmaWxsPSIjY2NjY2NjIiBkPSJNMjIuMTE4LDQ0LjIzNkM5LjkyMiw0NC4yMzYsMCwzNC4zMTQsMCwyMi4xMThTOS45MjIsMCwyMi4xMTgsMHMyMi4xMTgsOS45MjIsMjIuMTE4LDIyLjExOFMzNC4zMTQsNDQuMjM2LDIyLjExOCw0NC4yMzZ6IE0yMi4xMTgsMS41QzEwLjc1LDEuNSwxLjUsMTAuNzQ5LDEuNSwyMi4xMThjMCwxMS4zNjgsOS4yNSwyMC42MTgsMjAuNjE4LDIwLjYxOGMxMS4zNywwLDIwLjYxOC05LjI1LDIwLjYxOC0yMC42MThDNDIuNzM2LDEwLjc0OSwzMy40ODgsMS41LDIyLjExOCwxLjV6Ii8+PHBhdGggZmlsbD0iI2NjY2NjYyIgZD0iTTE5LjM0MSwyOS44ODRjLTAuMTkyLDAtMC4zODQtMC4wNzMtMC41My0wLjIyYy0wLjI5My0wLjI5Mi0wLjI5My0wLjc2OCwwLTEuMDYxbDYuNzk2LTYuODA0bC02Ljc5Ni02LjgwM2MtMC4yOTItMC4yOTMtMC4yOTItMC43NjksMC0xLjA2MWMwLjI5My0wLjI5MywwLjc2OC0wLjI5MywxLjA2MSwwbDcuMzI1LDcuMzMzYzAuMjkzLDAuMjkzLDAuMjkzLDAuNzY4LDAsMS4wNjFsLTcuMzI1LDcuMzMzQzE5LjcyNSwyOS44MTEsMTkuNTMzLDI5Ljg4NCwxOS4zNDEsMjkuODg0eiIvPjwvZz48L3N2Zz4=';
-
-// on récupère toutes les url sur le chat
-// on les isole
-// on fait une requête pour savoir qui reconnais l'url
-// si il y'en a un qui reconnait l'url, on la lui passe
-// il va retourner
-
-/*2 cas :
-1) on a l'image direct, on fait la request en mode binaire
-2) on a pas l'image, on doit faire une requête en mode text, puis récupérer l'image dedans puis l'afficher
-3) on fait donc une demande de charger une url spéciale. Avec en plus le mode de la request et le traitement à utiliser
-4) on traite le retour avec le traitement spécifié
-5) le traitement retourne un objet contenant : title, un élement
-6) On génère tout ça, on le met dans un élément
-7) Une fois fait, on appelle une fonction de post-traitement qui peut modifier l'élément et le titre
-8) L'utilisateur peur avoir des options, avant d'auto-ouvrir l'élément, on vérifie si il ne veut pas que ce soit fold par défaut
-9) la fonction de post traitement de pastebin n'affiche que les 4 premières lignes de code. Il faut cliquer dessus pour l'ouvrir plus
-
-// type d'affichage :
-title ou url
-contenu*/
-
-/*
-Il y'a deux possibilités :
-1) Il y'a un élément qui demande une requête (genre pastebin)
-2) Un élément ne demande pas de traitement (genre youtube ou imgur)
-
-Il y'a donc deux cas :
-1) Affichage d'une icone de loading pendant le chargement
-2) Pas d'affichage de loading
-
-Pour la requête ou pas de requête, c'est au ressourceHandler de le préciser
-Avec requête :
-	{
-		url : url a récupérer
-		handler : handler à utiliser
-		loading: { // optionnel
-			width: x, // largeur de la zone a précharger
-			height: x // hauteur de la zone à précharger
-		}
-	}
-	au handler, il sera passé le text récupéré lors de la requête
-Sans requête :
-	{
-		data : data
-		handler : handler à utiliser
-		loading: { // optionnel
-			width: x, // largeur de la zone a précharger
-			height: x // hauteur de la zone à précharger
-		}
-	}
-*/
-
-/*
-	On insère l'élément juste après le lien. Même si il y'a du texte après
-
-	Donc on ajoute au lien une petite flèche qui va permettre de fold et unfold
-	On affiche l'élément à la ligne
-	et on laisse le flow du message continuer après
-*/
-
-/*
-	Il est important que cela ne dérange pas l'utilisateur, donc on doit sauvegarder l'endroit qu'il est en train de lire et l'y replacer une fois l'affichage fait
-	Quand hors de la ligne de flottaison, on conserve la taille de l'élément, mais on le display none. Afin de ne pas entrainer de lag dus au gifs et autres
-*/
-
-/*
-	Passer Prism dans le scope du nav, pour pouvoir utiliser les workers avec
-*/
-
-/*
-	right arrow : data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iaXNvLTg4NTktMSI/PjwhRE9DVFlQRSBzdmcgUFVCTElDICItLy9XM0MvL0RURCBTVkcgMS4xLy9FTiIgImh0dHA6Ly93d3cudzMub3JnL0dyYXBoaWNzL1NWRy8xLjEvRFREL3N2ZzExLmR0ZCI+PHN2ZyB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4IiB3aWR0aD0iMzczLjAwOHB4IiBoZWlnaHQ9IjM3My4wMDhweCIgdmlld0JveD0iMCAwIDM3My4wMDggMzczLjAwOCIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+PHBhdGggZmlsbD0iIzVmYWQxYiIgZD0iTTYxLjc5MiwyLjU4OEM2NC43NzEsMC44NjQsNjguMTA1LDAsNzEuNDQ0LDBjMy4zMywwLDYuNjYzLDAuODY0LDkuNjU1LDIuNTg4bDIzMC4xMTYsMTY3LjJjNS45NjMsMy40NDUsOS42NTYsOS44MjMsOS42NTYsMTYuNzE5YzAsNi44OTUtMy42ODMsMTMuMjcyLTkuNjU2LDE2LjcxM0w4MS4wOTksMzcwLjQyN2MtNS45NzIsMy40NDEtMTMuMzM0LDMuNDQxLTE5LjMwMiwwYy01Ljk3My0zLjQ1My05LjY2LTkuODMzLTkuNjYtMTYuNzI0VjE5LjMwNUM1Mi4xMzcsMTIuNDEzLDU1LjgxOCw2LjAzNiw2MS43OTIsMi41ODh6Ii8+PC9zdmc+
-*/
-
-
-(function()
-{
-	var ressourceHandler = [
-		{ // pastebin
-			'match': function(url) {
-				var reg = new RegExp('https?:\/\/pastebin\.com\/.{1,}');
-				return reg.test(url);
-			},
-			'request': function(url) {
-				var reg = new RegExp('[=\/]([^\/=]*$)');
-				var id = reg.exec(url)[1];
-
-				// on a besoin de la page sans le raw
-				return {
-					url: 'https://pastebin.com/' + id,
-					handler: 'pastebin',
-					loading: {
-						width: "100%",
-						height: "90px"
-					}
-				};
-			},
-			'post': function(elem) {
-				Prism.highlightElement(elem.querySelector('code'), elem.innerHTML.length > 10000, function() {
-
-
-				});
-			}
-		},
-		{ // prntscr
-			'match': function(url) {
-				var reg = new RegExp('(?:https?://)prntscr.com/.{1,}');
-				return reg.test(url);
-			},
-			'request': function(url) {
-				return {
-					url: url,
-					handler: 'prntscr',
-					loading: {
-						width: "100%",
-						height: "90px"
-					}
-				};
-			},
-			'post': postImage
-		},
-		{ // imgur
-			'match': function(url) {
-				var reg = new RegExp('(https?:\/\/(?:i\.)?imgur\.com\/(?:(?:gallery\/)|(?:a\/))?[^\/\n]{1,})');
-				return reg.test(url);
-			},
-			'request': function(url) {
-				// séparation de si gallery ou non
-				var galleryReg = new RegExp('\/gallery\/');
-				var idReg = new RegExp('https?:\/\/(?:i\.)?imgur\.com\/(?:(?:gallery\/)|(?:a\/))?([^.\n]+)');
-				var id = idReg.exec(url)[1];
-
-				var galery = galleryReg.exec(url) !== null;
-
-				return {
-					url: 'https://imgur.com/' + (galery ? 'a/' : '') + id,
-					handler: 'imgur',
-					loading: {
-						width: '100%',
-						height: '90px'
-					}
-				};
-			},
-			'post': postImage
-		}
-	];
-
-	var handler = {
-		/***************************************************************************
-		******************************** PASTEBIN **********************************
-		***************************************************************************/
-		'pastebin': function(data) {
-			// récupération du titre :
-			var titleReg = new RegExp('class="paste_box_line1" title="([^"]*)');
-			var languageReg = new RegExp('h_640"><a href=".*margin:0">([^<]*)');
-			var contentReg = new RegExp('id="paste_code"[^>]*>([^]*)<\/textarea>', 'm');
-			var doesntexistReg = new RegExp('id="content_left">[^<]*<[^>]*>([^<]*)');
-
-			var exist = doesntexistReg.exec(data);
-
-			if(exist[1].trim().length !== 0) {
-				return {
-					title: "Ce paste n'existe plus.",
-					content: document.createElement('div'),
-					abort: true
-				};
-			}
-
-			var elem = document.createElement('pre');
-			var code = document.createElement('code');
-
-			code.classList.add('language-' + languageReg.exec(data)[1].toLowerCase());
-			code.classList.add('line-numbers');
-			elem.classList.add('language-' + languageReg.exec(data)[1].toLowerCase());
-			elem.classList.add('line-numbers');
-
-			code.innerHTML = contentReg.exec(data)[1];
-			elem.appendChild(code);
-
-			return {
-				title: titleReg.exec(data)[1],
-				content: elem
-			};
-		},
-		/***************************************************************************
-		******************************** PRNTSCR* **********************************
-		***************************************************************************/
-		'prntscr': function(data) {
-			var imgReg = new RegExp('(https?://i\.imgur\.com/[^"]+)');
-			var removedReg = new RegExp('https?://i\.imgur\.com/8tdUI8N\.png'); // ce que tu fais est immonde prnt...
-
-			var removed = removedReg.exec(data);
-			var imgUrl = imgReg.exec(data);
-
-			// invalid if no img match or if the image have been removed
-			if(removed !== null) {
-				return {
-					title: 'Cette image n\'existe pas.',
-					content: document.createElement('div'),
-					abort: true
-				};
-			}
-
-			var img = document.createElement('img');
-			img.src = imgUrl[0];
-
-			return {
-				title: 'Prntscr - Image',
-				content: img
-			};
-		},
-		/***************************************************************************
-		******************************** IMGUR *************************************
-		***************************************************************************/
-		'imgur': function(data) {
-			var removedReg = new RegExp('(<title> +imgur: the simple 404 page<\/title>)');
-			var titleReg = new RegExp('class="post-title[^-][^>]+>([^<]+)');
-			// retrieve the images AND the comment is there is one on the image
-			var imagesReg = new RegExp('src="\/\/([^"]+)"[^<]+</a>[^>]+>[^<]+<(?:p +class="post-image-description[^>]+>([^<]+))?', 'g');
-
-			if(removedReg.exec(data) !== null) {
-				return {
-					title: 'Cette image n\'existe pas.',
-					content: document.createElement('div'),
-					abort: true
-				};
-			}
-
-			// retrieve the first 10 images
-			var current;
-			var images = [];
-			while(current = imagesReg.exec(data)) { // vivement ES6 et la destructuration !
-				images.push({
-					url: current[1],
-					description: current[2]
-				});
-			}
-
-			if(images.length <= 1 && images[0].description == null) { // une seule image et pas de description. Pas de viewer
-				var img = document.createElement('img');
-				img.src = 'https://' + images[0].url;
-				return {
-					'title': 'Imgur - Image',
-					content: img
-				};
-			}
-			else {
-				var contener = document.createElement('div');
-				for(var i = 0; i < images.length; ++i) {
-					(function() {
-						var c = document.createElement('div');
-						var im = document.createElement('img');
-						im.src = 'https://' + images[i].url;
-						if(images[i].description) {
-							var description = document.createElement('div');
-							description.innerHTML = images[i].description.trim();
-						}
-						c.appendChild(im);
-						if(description) c.appendChild(description);
-						contener.appendChild(c);
-					})();
-				}
-				return {
-					title: titleReg.exec(data)[1],
-					content: contener
-				}
-			}
-
-		}
-	};
-
-
-	function getRessource(ressource, callback) {
-		var ret = GM_xmlhttpRequest({
-			method: 'GET',
-			url: ressource,
-			onload: function(res) {
-				callback(res.responseText);
-			}
-		});
-	}
-
-	function check() {
-		$('#chat-messages').css('max-height', (window.innerHeight - 100) + 'px');
-		var links = $('.chat-message-messages a:not(.clp-checked)');
-
-		links.each(function() {
-			var url = $(this).attr('href');
-			var rh = getRessourceHandler(url);
-			if(!rh) return;
-			var requestData = rh.request(url);
-			// on crée le conteneur
-			var cont = document.createElement('div');
-			var title = document.createElement('div');
-			var elem = document.createElement('div');
-
-			cont.appendChild(title);
-
-			$(cont).css({
-				'border-left': 'solid 3px hsla(0, 0%, 0%, 0.2)',
-				'padding': '3px 0px 3px 15px',
-				'margin': '7px 0'
-			});
-
-			$(title).css({
-				'color': 'hsl(0, 0%, 40%)',
-				'cursor': 'pointer',
-				'display': 'inline-block'
-			});
-
-			$(elem).css({
-				'margin': '0.5em 0 0 0'
-			})
-
-			var that = this;
-
-			if(requestData.url) {
-				getRessource(requestData.url, function(data) {
-					var elems = handler[requestData.handler](data);
-					elem.appendChild(elems.content);
-					title.innerHTML = elems.title;
-					$(cont).insertAfter($(that));
-					if(!elems.abort) { // on ne fait pas le post-traitement si le handler a aborté
-						cont.appendChild(elem);
-						$(title).append('<span></span>');
-						$(title).addClass('arrow-right');
-						$(title).click(function() {
-							$(this).toggleClass('arrow-right');
-							$(this).toggleClass('arrow-down');
-						});
-						rh.post(elems.content);
-					}
-				});
-			}
-			// on met le lien comme checké
-			$(this).addClass('clp-checked');
-		});
-	}
-
-	function getRessourceHandler(url) {
-		for(var i = 0; i < ressourceHandler.length; ++i) {
-			if(ressourceHandler[i].match(url)) return ressourceHandler[i];
-		}
-	}
-
-	setInterval(check, 400);
-
-
-	/* fonctions posts prédéfinies */
-	function postImage(img) {
-		var root = $(img);
-		if(img.tagName == 'DIV') {
-			img = $(img).find('img');
-			root.find('> div').css('display', 'none');
-		}
-		$(img).css({
-			'max-width': '100%',
-			'max-height': maxMediaHeight + 'px',
-			'cursor': 'zoom-in',
-			'border-radius': '7px'
-		});
-		$(img).attr('data-zoomed', false);
-
-		$(img).click(function() {
-			var current = $(this);
-			if(current.attr('data-zoomed') == 'true') {
-				current.attr('data-zoomed', false).css({
-					'max-height': maxMediaHeight + 'px',
-					'cursor': 'zoom-in'
-				});
-			}
-			else {
-				current.attr('data-zoomed', true).css({
-					'max-height': 'none',
-					'cursor': 'zoom-out'
-				});
-			}
-		});
-
-		// viewer
-		if(root[0].tagName == 'DIV') {
-			var elems = root.find('> div');
-
-			var toLeft = $(document.createElement('div'));
-			var toRight = $(document.createElement('div'));
-
-			root.append(toLeft);
-			root.append(toRight);
-			toLeft.add(toRight).css({
-				'transition': 'ease all 0.6s',
-				'width': '60px',
-				'height': '100%',
-				'background': 'hsla(0, 0%, 0%, 0.6) ' + 'url(' + rightArrowSVGURI + ')',
-				'background-position': 'center',
-				'background-repeat': 'no-repeat',
-				'position': 'absolute',
-				'top': 0,
-				'z-index': 2,
-				'cursor': 'pointer'
-			}).hover(function() {
-				$(this).css('background-color', 'hsla(0, 0%, 0%, 0.9)');
-			}, function() {
-				$(this).css('background-color', 'hsla(0, 0%, 0%, 0.6)');
-			});
-
-			toRight.css('right', 0);
-			toLeft.css('transform', 'rotate(180deg)');
-
-			root.css({
-				'width': '100%',
-				'min-height': maxMediaHeight + 'px',
-				'background-color': 'hsl(0, 0%, 10%)',
-				'border': 'solid 1px hsl(0, 0%, 0%)',
-				'border-radius': '7px',
-				'position': 'relative'
-			});
-
-			root.find('> div > div').css({
-				'color': 'hsl(0, 0%, 80%)',
-				'position': 'absolute',
-				'padding': '10px 5px',
-				'bottom': 0,
-				'left': '60px',
-				'right': '60px',
-				'background-color': 'hsla(0, 0%, 0%, 0.7)',
-			});
-
-			root.find('> div').css({
-				'text-align': 'center'
-			});
-
-			function setIndex(idx) {
-				elems.css('display', 'none');
-				$(elems[idx]).css('display', 'block');
-			}
-
-			root.attr('data-index', 0);
-
-			setIndex(0);
-
-			toRight.click(function() {
-				var newIndex = (parseInt(root.attr('data-index')) + 1)%elems.length;
-				root.attr('data-index', newIndex);
-				setIndex(newIndex);
-			});
-
-			toLeft.click(function() {
-				var newIndex = ((parseInt(root.attr('data-index')) - 1) + elems.length)%elems.length;
-				root.attr('data-index', newIndex);
-				setIndex(newIndex);
-			});
-		}
-	}
-
-})();
