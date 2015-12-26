@@ -175,7 +175,7 @@ function getMaxMediaHeight() {
 					'url': 'https://vimeo.com/api/oembed.json?url=' + url
 				};
 			}
-		}
+		},
 		'basic-image': {
 			'match': function(url) {
 				var reg = /.*\.(?:png|jpe?g|gif|bmp|svg)(?:\/|\?.*|#.*)*$/i;
@@ -318,12 +318,14 @@ function getMaxMediaHeight() {
 				};
 			}
 
+
 			var data = JSON.parse(data.replace('\\"', '@'));
 			var url = data.uri.replace('@', '"').replace('\\/', '/');
+
 			return {
 				'displayMethod': 'iframe-video',
 				'data': {
-					'url': 'https://player.vimeo.com' + url,
+					'url': 'https://player.vimeo.com' + url.replace('videos', 'video'),
 					'title': 'Vimeo - ' + data.title
 				}
 			};
