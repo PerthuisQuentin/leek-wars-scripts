@@ -301,11 +301,11 @@ function getMaxMediaHeight() {
 			var data = JSON.parse(data.replace('\\"', '@'));
 			var url = $(data.html.replace('@', '"')).attr('src'); // ça drop les infos de playlist :(
 			return {
-				'displayMethod': 'iframe-video',
+				'displayMethod': 'youtube',
 				'data': {
 					'url': url,
 					'title': 'Youtube - ' + data.title.replace('@', '"')
-				}
+				},
 			};
 		},
 		'vimeo': function(data) {
@@ -323,7 +323,7 @@ function getMaxMediaHeight() {
 			var url = data.uri.replace('@', '"').replace('\\/', '/').replace('videos', 'video');
 
 			return {
-				'displayMethod': 'iframe-video',
+				'displayMethod': 'vimeo',
 				'data': {
 					'url': 'https://player.vimeo.com' + url,
 					'title': 'Vimeo - ' + data.title
@@ -348,7 +348,25 @@ function getMaxMediaHeight() {
 				'post': 'pastebin'
 			};
 		},
-		'iframe-video': function(data) {
+		'youtube': function(data) {
+			var wrapper = $(document.createElement('div')); // permet d'avoir des vidéos à largeur fluide
+			var frame = $(document.createElement('iframe'));
+
+			wrapper.addClass('clp-fluid-iframe');
+
+			frame.attr('src', data.url + '&enablejsapi=1&version=3');
+			frame.attr('allowfullscreen', 'true');
+			frame.attr('frameborder', '0');
+
+			wrapper.append(frame);
+
+			return {
+				'title': data.title,
+				'elem': wrapper,
+				'foldEvent': 'youtube-controls'
+			};
+		},
+		'vimeo': function(data) {
 			var wrapper = $(document.createElement('div')); // permet d'avoir des vidéos à largeur fluide
 			var frame = $(document.createElement('iframe'));
 
@@ -357,12 +375,14 @@ function getMaxMediaHeight() {
 			frame.attr('src', data.url);
 			frame.attr('allowfullscreen', 'true');
 			frame.attr('frameborder', '0');
+			frame.attr('api', '1');
 
 			wrapper.append(frame);
 
 			return {
 				'title': data.title,
-				'elem': wrapper
+				'elem': wrapper,
+				'foldEvent': 'vimeo-controls'
 			};
 		},
 		'basic-image': function(data) {
@@ -443,6 +463,19 @@ function getMaxMediaHeight() {
 		}
 	};
 
+	var foldEvents = {
+		'youtube-controls': function(elem, folded) {
+			console.log('demande de pause');
+			console.log($(elem).find('iframe')[0]);
+			console.log($(elem).find('iframe')[0].contentWindow.document);
+			$(elem).find('iframe')[0].postMessage('{"event":"command","func":"pauseVideo", "args":""}', '*');
+			console.log('pausé');
+		},
+		'vimeo-controls': function(elem, folded) {
+			$(elem).find('iframe').postMessage('{"event":"command","func":"pauseVideo", "args":""}', '*');
+		}
+	};
+
 	/*************************************************************************************************************************
 	**************************************** CORE FUNCTIONS -- NO NEED TO MODIFY *********************************************
 	*************************************************************************************************************************/
@@ -472,6 +505,13 @@ function getMaxMediaHeight() {
 				// on appelle le post si nécessaire
 				if(elem.post) {
 					posts[elem.post]($(elem.elem));
+				}
+
+				// gérer les fold events de manière propre
+				if(elem.foldEvent) {
+					$(current).find(' + .clp-cont .clp-title').click(function() {
+						foldEvents[elem.foldEvent]($(current).find('+ .clp-cont .clp-elem > *'), $(current).hasClass('clp-folded'));
+					});
 				}
 			});
 
@@ -545,6 +585,7 @@ function getMaxMediaHeight() {
 			callback({
 				'elem': data.elem,
 				'post': data.post,
+				'foldEvent': data.foldEvent,
 				'title': data.title,
 				'description': data.description
 			});
@@ -746,6 +787,9 @@ function getMaxMediaHeight() {
 			width: 100%; \
 			height: 100%; \
 		}');
+
+		// chargement de l'API youtube (à delayer)
+		// ytp-play-button ytp-button
 
 })();
 
