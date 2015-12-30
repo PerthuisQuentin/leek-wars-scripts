@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          [Leek Wars] Chat link preview
 // @namespace     https://github.com/Ebatsin/Leek-Wars/
-// @version       0.2
+// @version       0.3
 // @description   Permet d'afficher une preview des ressources linkées dans le chat
 // @author        Twilight
 // @projectPage   https://github.com/Ebatsin/Leek-Wars/
@@ -166,13 +166,25 @@ function getMaxMediaHeight() {
 		},
 		'vimeo': { // supporte oembed
 			'match': function(url) {
-				var reg = /https?:\/\/vimeo\.com\/\d+/;
+				var reg = /https?:\/\/vimeo\.com\/(?:channels\/[^\/]+\/|groups\/[^\/]+\/videos\/)?\d+/;
 				return reg.test(url);
 			},
 			'request': function(url) {
 				return {
 					'handler': 'vimeo',
 					'url': 'https://vimeo.com/api/oembed.json?url=' + url
+				};
+			}
+		},
+		'soundcloud': { // supporte oembed
+			'match': function(url) {
+				var reg = /https?:\/\/soundcloud\.com\/[a-zA-Z\d\-]+\/[a-zA-Z\d\-]+\/?/;
+				return reg.test(url);
+			},
+			'request': function(url) {
+				return {
+					'handler': 'soundcloud',
+					'url': 'https://soundcloud.com/oembed?url=' + url + '&format=json'
 				};
 			}
 		},
@@ -329,6 +341,28 @@ function getMaxMediaHeight() {
 					'title': 'Vimeo - ' + data.title
 				}
 			};
+		},
+		'soundcloud': function(data) {
+			console.log('on a un soundcloud 2');
+			if(data.trim().length === 0) {
+				return {
+					'abort': {
+						'title': 'Soundcloud - Ce son n\'existe pas.',
+						'show': true
+					}
+				};
+			}
+
+			var data = JSON.parse(data.replace('\\"', '@'));
+			var url = $(data.html.replace('@', '"')).attr('src');
+
+			return {
+				'displayMethod': 'soundcloud',
+				'data': {
+					'title': 'Soundcloud - ' + data.title,
+					'url': url
+				}
+			};
 		}
 	};
 
@@ -354,7 +388,7 @@ function getMaxMediaHeight() {
 
 			wrapper.addClass('clp-fluid-iframe');
 
-			frame.attr('src', data.url + '&enablejsapi=1&version=3');
+			frame.attr('src', data.url);
 			frame.attr('allowfullscreen', 'true');
 			frame.attr('frameborder', '0');
 
@@ -375,7 +409,6 @@ function getMaxMediaHeight() {
 			frame.attr('src', data.url);
 			frame.attr('allowfullscreen', 'true');
 			frame.attr('frameborder', '0');
-			frame.attr('api', '1');
 
 			wrapper.append(frame);
 
@@ -383,6 +416,23 @@ function getMaxMediaHeight() {
 				'title': data.title,
 				'elem': wrapper,
 				'foldEvent': 'vimeo-controls'
+			};
+		},
+		'soundcloud': function(data) {
+			var wrapper = $(document.createElement('div')); // permet d'avoir des vidéos à largeur fluide
+			var frame = $(document.createElement('iframe'));
+
+			frame.attr('src', data.url);
+			frame.attr('frameborder', 'no');
+			frame.css('width', '100%');
+			frame.attr('scrolling', 'no');
+
+			wrapper.append(frame);
+
+			return {
+				'title': data.title,
+				'elem': wrapper,
+				'foldEvent': 'soundcloud-controls'
 			};
 		},
 		'basic-image': function(data) {
@@ -465,14 +515,19 @@ function getMaxMediaHeight() {
 
 	var foldEvents = {
 		'youtube-controls': function(elem, folded) {
-			console.log('demande de pause');
-			console.log($(elem).find('iframe')[0]);
-			console.log($(elem).find('iframe')[0].contentWindow.document);
-			$(elem).find('iframe')[0].postMessage('{"event":"command","func":"pauseVideo", "args":""}', '*');
-			console.log('pausé');
+			if(!folded) return;
+			elem = elem.find('iframe').first();
+			elem.attr('src', elem.attr('src')); // refresh l'iframe. Evite de devoir charger l'API youtube pour couper
 		},
 		'vimeo-controls': function(elem, folded) {
-			$(elem).find('iframe').postMessage('{"event":"command","func":"pauseVideo", "args":""}', '*');
+			if(!folded) return;
+			elem = elem.find('iframe').first();
+			elem.attr('src', elem.attr('src')); // todo : voir si possible de mettre en pause vimeo de manière simple
+		},
+		'soundcloud-controls': function(elem, folded) {
+			if(!folded) return;
+			elem = elem.find('iframe').first();
+			elem.attr('src', elem.attr('src')); // todo : voir si possible de mettre en pause vimeo de manière simple
 		}
 	};
 
@@ -509,8 +564,11 @@ function getMaxMediaHeight() {
 
 				// gérer les fold events de manière propre
 				if(elem.foldEvent) {
+					console.log('on a un foldEvent : ' + elem.foldEvent);
 					$(current).find(' + .clp-cont .clp-title').click(function() {
-						foldEvents[elem.foldEvent]($(current).find('+ .clp-cont .clp-elem > *'), $(current).hasClass('clp-folded'));
+						console.log($(current).find('+ .clp-cont .clp-elem > *'));
+						console.log('folded: ' + $(current).hasClass('clp-folded'));
+						foldEvents[elem.foldEvent]($($(current).find('+ .clp-cont .clp-elem > *')[0]), $(current).hasClass('clp-folded'));
 					});
 				}
 			});
