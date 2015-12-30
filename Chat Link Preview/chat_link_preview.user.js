@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          [Leek Wars] Chat link preview
 // @namespace     https://github.com/Ebatsin/Leek-Wars/
-// @version       0.3
+// @version       0.35
 // @description   Permet d'afficher une preview des ressources linkées dans le chat
 // @author        Twilight
 // @projectPage   https://github.com/Ebatsin/Leek-Wars/
@@ -343,7 +343,6 @@ function getMaxMediaHeight() {
 			};
 		},
 		'soundcloud': function(data) {
-			console.log('on a un soundcloud 2');
 			if(data.trim().length === 0) {
 				return {
 					'abort': {
@@ -564,10 +563,7 @@ function getMaxMediaHeight() {
 
 				// gérer les fold events de manière propre
 				if(elem.foldEvent) {
-					console.log('on a un foldEvent : ' + elem.foldEvent);
 					$(current).find(' + .clp-cont .clp-title').click(function() {
-						console.log($(current).find('+ .clp-cont .clp-elem > *'));
-						console.log('folded: ' + $(current).hasClass('clp-folded'));
 						foldEvents[elem.foldEvent]($($(current).find('+ .clp-cont .clp-elem > *')[0]), $(current).hasClass('clp-folded'));
 					});
 				}
@@ -670,8 +666,14 @@ function getMaxMediaHeight() {
 		// ajout de la flèche à droite du titre
 		if(data.elem) {
 			title.append('<span></span>');
-			title.click(function() {
-				link.toggleClass('clp-folded');
+			title.mousedown(function(e) {
+				if(e.which === 1) {
+					link.toggleClass('clp-folded');
+				}
+				else if(e.which === 2) { // middle button
+					link[0].click();
+					e.preventDefault();
+				}
 			});
 		}
 
