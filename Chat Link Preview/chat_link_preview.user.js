@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          [Leek Wars] Chat link preview
 // @namespace     https://github.com/Ebatsin/Leek-Wars/
-// @version       0.37
+// @version       0.37.1
 // @description   Permet d'afficher une preview des ressources linkées dans le chat
 // @author        Twilight
 // @projectPage   https://github.com/Ebatsin/Leek-Wars/
@@ -691,8 +691,8 @@ function getMaxMediaHeight() {
 		} \
 		#chat-messages { \
 			height: calc(90vh - 36px - 32px - 44px - 1em); \
-			max-height: none; \
-			min-height: none; \
+			max-height: none !important; \
+			min-height: none !important; \
 		} \
 		.clp-cont div > pre { \
 			overflow: hidden; \
