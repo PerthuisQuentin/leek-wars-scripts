@@ -685,7 +685,14 @@ function getMaxMediaHeight() {
 
 	setInterval(check, 100);
 
-	GM_addStyle('.clp-cont div > pre { \
+	GM_addStyle(' \
+		#chat { \
+			height: 90vh; \
+		} \
+		#chat-messages { \
+			height: calc(90vh - 36px - 32px - 44px - 1em); \
+		} \
+		.clp-cont div > pre { \
 			overflow: hidden; \
 			border: solid 1px hsl(0, 0%, 70%); \
 			border-radius: 10px; \
