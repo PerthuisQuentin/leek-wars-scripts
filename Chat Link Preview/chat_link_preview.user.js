@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          [Leek Wars] Chat link preview
 // @namespace     https://github.com/Ebatsin/Leek-Wars/
-// @version       0.38
+// @version       0.39
 // @description   Permet d'afficher une preview des ressources linkées dans le chat
 // @author        Twilight
 // @projectPage   https://github.com/Ebatsin/Leek-Wars/
@@ -154,10 +154,12 @@ function getMaxMediaHeight() {
 		},
 		'youtube': { // supporte oembed
 			'match': function(url) {
-				var reg = /https?:\/\/(?:m\.|www\.)?youtu(?:be\.com|\.be)\/(?:watch)?(?:\?v=)?[a-zA-Z\d]+(?:&[a-zA-Z\d]+=[a-zA-Z\d]+)*/;
+				//var reg = /https?:\/\/(?:m\.|www\.)?youtu(?:be\.com|\.be)\/(?:watch)?(?:\?v=)?[a-zA-Z\d]+(?:&[a-zA-Z\d]+=[a-zA-Z\d]+)*/;
+				var reg = /https?:\/\/(?:m\.|www\.)?(?:youtu(?:be\.com|\.be)|listenonrepeat\.com)\/(?:watch)?(?:\/?\?v=)?[a-zA-Z\d]+(?:&[a-zA-Z\d]+=[a-zA-Z\d]+|#.*)*/;
 				return reg.test(url);
 			},
 			'request': function(url) {
+				url = url.replace(/#.*/, '').replace('listenonrepeat.com/watch/', 'www.youtube.com/watch');
 				return {
 					'handler': 'youtube',
 					'url': 'https://www.youtube.com/oembed?url=' + url + '&format=json'
