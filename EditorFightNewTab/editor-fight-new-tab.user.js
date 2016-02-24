@@ -1,12 +1,14 @@
 // ==UserScript==
-// @name              [Leek Wars] Editor-fight - new tab
-// @namespace         https://github.com/Ebatsin/Leek-Wars/
-// @version           0.1
-// @description       Lance les tests dans un nouvel onglet
-// @author            Twilight
-// @projectPage       https://github.com/Ebatsin/Leek-Wars/
-// @match             http://leekwars.com/*
-// @grant             none
+// @name           [Leek Wars] Editor-fight - new tab
+// @namespace      https://github.com/Ebatsin/Leek-Wars/
+// @version        0.1
+// @description    Lance les tests dans un nouvel onglet
+// @author         Twilight
+// @projectPage    https://github.com/Ebatsin/Leek-Wars/
+// @updateURL      https://github.com/Ebatsin/Leek-Wars/raw/master/EditorFightNewTab/editor-fight-new-tab.user.js
+// @downloadURL    https://github.com/Ebatsin/Leek-Wars/raw/master/EditorFightNewTab/editor-fight-new-tab.user.js
+// @match          http://leekwars.com/*
+// @grant          none
 // ==/UserScript==
 
 (function() {
