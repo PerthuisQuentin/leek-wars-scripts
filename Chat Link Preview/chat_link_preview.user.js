@@ -122,7 +122,7 @@ function getMaxMediaHeight() {
 		},
 		'prntscr': {
 			'match': function(url) {
-				var reg = /https?:\/\/prntscr\.com\/[a-z\d]+$/;
+				var reg = /https?:\/\/(?:prntscr\.com|prnt\.sc)\/[a-z\d]+$/;
 				return reg.test(url);
 			},
 			'request': function(url) {
