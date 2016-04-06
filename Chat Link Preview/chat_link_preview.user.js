@@ -8,6 +8,7 @@
 // @downloadURL   https://github.com/Ebatsin/Leek-Wars/raw/master/Chat%20Link%20Preview/chat_link_preview.user.js
 // @updateURL     https://github.com/Ebatsin/Leek-Wars/raw/master/Chat%20Link%20Preview/chat_link_preview.user.js
 // @match         http://leekwars.com/*
+// @connect       *
 // @grant         GM_xmlhttpRequest
 // @grant         GM_addStyle
 // @require       http://code.jquery.com/jquery-2.1.4.min.js
