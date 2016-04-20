@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          [Leek Wars] Doc everywhere
 // @namespace     https://github.com/Ebatsin/Leek-Wars/
-// @version       0.2
+// @version       0.2.1
 // @description   Permet d'accéder à la documentation de n'importe quelle page
 // @author        Twilight
 // @projectPage   https://github.com/Ebatsin/Leek-Wars/
@@ -280,6 +280,21 @@ color: hsl(0, 0%, 90%);\
 font-weight: bold;\
 margin-left: 2.4em;\
 }\
+.doc-doc-item-value-title {\
+font-size: 1em;\
+color: hsl(0, 0%, 90%);\
+font-weight: bold;\
+margin-left: 2.4em;\
+display: inline-block;\
+}\
+.doc-doc-item-value-constant {\
+display: inline-block;\
+margin-left: 0.6em;\
+color: hsl(0, 0%, 80%);\
+}\
+.doc-doc-item-value-title:after {\
+content: ' : ';\
+}\
 .doc-doc-item-params-content .doc-doc-item-params-first {\
 color: hsl(180, 40%, 60%);\
 font-weight: bold;\
@@ -429,12 +444,16 @@ border-bottom: solid 1px hsl(180, 40%, 60%);\
 		var constantValue = $(document.createElement('div')).addClass('doc-doc-item-title');
 		var description = $(document.createElement('div')).addClass('doc-doc-item-desc').html(lang['const_' + constant.real_name] ? lang['const_' + constant.real_name].replace(/#[a-zA-Z0-9_]*/g, function(i) {
 			return '<a href="#doc-doc-' + i.substr(1) + '">' + i.substr(1) + '</a>';
-		}) : '');
+		}) : '');		
+		var constantIdTitle = $(document.createElement('h2')).addClass('doc-doc-item-value-title').html('Valeur');
+		var constantIdConstant = $(document.createElement('div')).addClass('doc-doc-item-value-constant').html(constant.value);
 
 		constantValue.html(constant.name);
 		
 		element.append(constantValue);
 		element.append(description);
+		element.append(constantIdTitle);
+		element.append(constantIdConstant);
 
 		return element;
 	}
