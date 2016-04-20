@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          [Leek Wars] Doc everywhere
 // @namespace     https://github.com/Ebatsin/Leek-Wars/
-// @version       0.2.2
+// @version       0.3
 // @description   Permet d'accéder à la documentation de n'importe quelle page
 // @author        Twilight
 // @projectPage   https://github.com/Ebatsin/Leek-Wars/
@@ -192,7 +192,6 @@ background-color: hsl(0, 0%, 20%);\
 .doc-win-doc {\
 width: 100%;\
 height: calc(100% - 3.5em);\
-height: 100%;\
 border-top: solid 1px hsl(0, 0%, 13%);\
 box-sizing: border-box;\
 overflow-x: hidden;\
@@ -334,6 +333,9 @@ border-bottom: solid 1px hsl(180, 40%, 60%);\
 	var cat = {};
 	var hashTable = {};
 	var lang;
+
+	var data = [];
+	var catData = {};
 	
 	function genSymblTable() {
 		_.get('lang/get/documentation/fr', function(lg){
@@ -341,11 +343,16 @@ border-bottom: solid 1px hsl(180, 40%, 60%);\
 			_.get('function/get-categories', function(data) {
 				for(var i in data.categories) {
 					if(!data.categories.hasOwnProperty(i)) continue;
+					catData[i] = {
+						nb: 0,
+						name: 'doc-cat-title-' + data.categories[i].name,
+						sideName: 'doc-side-cat-title-' + data.categories[i].name
+					};
 					cat[i] = data.categories[i].name;
 					sidebar.append($(document.createElement('div')).addClass('doc-side-cat').addClass('doc-side-cat-' + i).append(
-						$(document.createElement('div')).addClass('doc-side-cat-title').html(lang['function_category_' + cat[i]])));
+						$(document.createElement('div')).addClass('doc-side-cat-title').attr('id', 'doc-side-cat-title-' + cat[i]).html(lang['function_category_' + cat[i]])));
 					
-					doc.append($(document.createElement('div')).addClass('doc-doc-cat').addClass('doc-doc-cat-' + i).append(
+					doc.append($(document.createElement('div')).addClass('doc-doc-cat').addClass('doc-doc-cat-' + i).attr('id', 'doc-cat-title-' + cat[i]).append(
 						$(document.createElement('div')).addClass('doc-doc-cat-title').html(lang['function_category_' + cat[i]])));
 				}
 
@@ -354,11 +361,12 @@ border-bottom: solid 1px hsl(180, 40%, 60%);\
 						hashTable[i.name] = 0;
 					}
 					++hashTable[i.name];
+					++catData[i.category].nb;
 					i.real_name = i.name + ((hashTable[i.name] == 1) ? '' : '_' + hashTable[i.name]);
 					$('.doc-doc-cat-' + i.category).first().append(genFuncElement(i));
 					
 					if(hashTable[i.name] > 1) continue;
-					$('.doc-side-cat-' + i.category).first().append($(document.createElement('a')).addClass('doc-side-item').html(i.name).attr('href', '#doc-doc-' + i.real_name));
+					$('.doc-side-cat-' + i.category).first().append($(document.createElement('a')).addClass('doc-side-item').attr('id', 'doc-side-item-' + i.real_name).html(i.name).attr('href', '#doc-doc-' + i.real_name));
 				}
 
 				for(var i of LW.constants) {
@@ -366,11 +374,12 @@ border-bottom: solid 1px hsl(180, 40%, 60%);\
 						hashTable[i.name] = 0;
 					}
 					++hashTable[i.name];
+					++catData[i.category].nb;
 					i.real_name = i.name + ((hashTable[i.name] == 1) ? '' : '_' + hashTable[i.name]);
 					$('.doc-doc-cat-' + i.category).first().append(genConstantElement(i));
 
 					if(hashTable[i.name] > 1) continue;
-					$('.doc-side-cat-' + i.category).first().append($(document.createElement('a')).addClass('doc-side-item').html(i.name).attr('href', '#doc-doc-' + i.real_name));
+					$('.doc-side-cat-' + i.category).first().append($(document.createElement('a')).addClass('doc-side-item').attr('id', 'doc-side-item-' + i.real_name).html(i.name).attr('href', '#doc-doc-' + i.real_name));
 				}
 
 				$('.doc-win a').click(function(e) { e.stopBubbling(); }); // empêche le refresh de la page au click sur un lien
@@ -391,6 +400,14 @@ border-bottom: solid 1px hsl(180, 40%, 60%);\
 	}
 	
 	function genFuncElement(func) {
+		data.push({
+			name: func.real_name,
+			id: 'doc-doc-' + func.real_name,
+			idSide: 'doc-side-item-' + func.real_name,
+			level: func.level,
+			cat: func.category
+		});
+
 		var element = $(document.createElement('div')).addClass('doc-doc-item').attr('id', 'doc-doc-' + func.real_name);
 		var funcValue = $(document.createElement('div')).addClass('doc-doc-item-title');
 		var params = $(document.createElement('div')).addClass('doc-doc-item-params');
@@ -449,7 +466,15 @@ border-bottom: solid 1px hsl(180, 40%, 60%);\
 		return element;
 	}
 	
-	function genConstantElement(constant) {
+	function genConstantElement(constant) {		
+		data.push({
+			name: constant.real_name,
+			id: 'doc-doc-' + constant.real_name,
+			idSide: 'doc-side-item-' + constant.real_name,
+			level: 1,
+			cat: constant.category
+		});
+
 		var element = $(document.createElement('div')).addClass('doc-doc-item').attr('id', 'doc-doc-' + constant.real_name);
 		var constantValue = $(document.createElement('div')).addClass('doc-doc-item-title');
 		var description = $(document.createElement('div')).addClass('doc-doc-item-desc').html(lang['const_' + constant.real_name] ? lang['const_' + constant.real_name].replace(/#[a-zA-Z0-9_]*/g, function(i) {
@@ -503,7 +528,7 @@ border-bottom: solid 1px hsl(180, 40%, 60%);\
 		searchBox.append(search);
 		searchBox.append(submit);
 		
-		//viewport.append(searchBox);
+		viewport.append(searchBox);
 		viewport.append(doc);
 		
 		core.append(sidebar);
@@ -521,6 +546,29 @@ border-bottom: solid 1px hsl(180, 40%, 60%);\
 		close[0].addEventListener('click', function() {
 			win.toggleClass('doc-hide');
 		});
+
+		$(searchBox.find('input')).bind('keyup', function() {
+			regenWorker(function(data) {
+				data = data.data;
+				var tmp;
+				for(var i in data) {
+					if(data.hasOwnProperty(i)) {
+						tmp = document.getElementById(i);
+						if(tmp) {
+							tmp.style.display = data[i] ? 'block' : 'none';
+						}
+					}
+				}
+			});
+			ww.postMessage({
+				data: data,
+				cat: catData,
+				min: inMin.val().replace(/[ \t]/g, '').length > 0 ? parseInt(inMin.val()) : 1,
+				max: inMax.val().replace(/[ \t]/g, '').length > 0 ? parseInt(inMax.val()) : 301,
+				query: search.val()
+			});
+		});
+
 		
 		genSymblTable();
 		
@@ -657,5 +705,43 @@ border-bottom: solid 1px hsl(180, 40%, 60%);\
 
 		var prismStyle = $(document.createElement('style')).attr('type', 'text/css').html(prismCSS);
 		document.head.appendChild(prismStyle[0]);
+
+		function workerFunc() {
+			onmessage = function(data) {
+				data = data.data;
+				var answer = {};
+				var reg = new RegExp('.*' + data.query + '.*', 'i');
+				for(var i = 0; i < data.data.length; ++i) {
+					if(reg.test(data.data[i].name) && data.data[i].level >= data.min && data.data[i].level <= data.max) {
+						answer[data.data[i].id] = true;
+						answer[data.data[i].idSide] = true;
+					}
+					else {
+						answer[data.data[i].id] = false;
+						answer[data.data[i].idSide] = false;
+						data.cat[data.data[i].cat].nb--;
+					}
+				}
+
+				for(var i in data.cat) {
+					if(data.cat.hasOwnProperty(i)) {
+						answer[data.cat[i].name] = data.cat[i].nb != 0;
+						answer[data.cat[i].sideName] = data.cat[i].nb != 0;
+					}
+				}
+
+				postMessage(answer);
+			};
+		}
+
+		function regenWorker(func) {
+			ww.terminate();
+			ww = new Worker(blob);
+			ww.onmessage = func;
+		}
+
+	var blob = URL.createObjectURL(new Blob([
+		'(', workerFunc, ')()'], {type: 'application/javascript'}));
+	var ww = new Worker(blob);
 		
 })();
