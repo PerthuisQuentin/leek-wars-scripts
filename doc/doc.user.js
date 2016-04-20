@@ -373,6 +373,8 @@ border-bottom: solid 1px hsl(180, 40%, 60%);\
 					$('.doc-side-cat-' + i.category).first().append($(document.createElement('a')).addClass('doc-side-item').html(i.name).attr('href', '#doc-doc-' + i.real_name));
 				}
 
+				$('.doc-win a').click(function(e) { e.stopBubbling(); }); // empêche le refresh de la page au click sur un lien
+
 				$('.doc-win code').each(function(index, elem) {
 					elem = $(elem);
 					elem.addClass('language-js');
