@@ -301,7 +301,7 @@
 		</dict>
 		<dict>
 			<key>match</key>
-			<string>\b(break|continue|do|else|for|if|return|while|include)\b</string>
+			<string>\b(break|continue|do|else|for|if|return|while)\b</string>
 			<key>name</key>
 			<string>keyword.control.js</string>
 		</dict>

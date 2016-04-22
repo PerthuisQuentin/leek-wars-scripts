@@ -5,7 +5,7 @@
 
 if(LW.functions === undefined) {
 	alert('Merci de n\'utiliser ce script que sur le site leekwars.com ou d\'attendre que la page soit chargée avant de l\'utiliser');
-	//return;
+	return;
 }
 
 var file = '{\n\t"scope": "source.ls",\n\t"completions":\n\t[\n';

@@ -1,0 +1,8 @@
+<snippet>
+    <content><![CDATA[do {
+	$0
+} while(${1:/*condition*/});]]></content>
+    <tabTrigger>dowhile</tabTrigger>
+    <scope>source.ls</scope>
+    <description>do … while</description>
+</snippet>

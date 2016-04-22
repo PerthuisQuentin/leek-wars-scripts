@@ -1,0 +1,6 @@
+<snippet>
+    <content><![CDATA[for(var ${20:i} in ${1:array}) {$0}]]></content>
+    <tabTrigger>forin</tabTrigger>
+    <scope>source.ls</scope>
+    <description>for(i in array)</description>
+</snippet>
