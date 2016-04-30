@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          [Leek Wars] Doc everywhere
 // @namespace     https://github.com/Ebatsin/Leek-Wars/
-// @version       0.3
+// @version       0.4
 // @description   Permet d'accéder à la documentation de n'importe quelle page
 // @author        Twilight
 // @projectPage   https://github.com/Ebatsin/Leek-Wars/
@@ -12,12 +12,15 @@
 
 (function() {
 	var cssCode = "\
+.doc-win-blackground-hide {\
+display: none;\
+}\
 .doc-win {\
 transition: ease all 0.2s;\
 position: fixed;\
 font-size: 1rem;\
 top: 0;\
-z-index: 1000;\
+z-index: 1001;\
 width: 90%;\
 height: 90%;\
 margin-left: 5%;\
@@ -332,6 +335,7 @@ border-bottom: solid 1px hsl(180, 40%, 60%);\
 	var table = [];
 	var cat = {};
 	var hashTable = {};
+	var blackGround;
 	var lang;
 
 	var data = [];
@@ -504,6 +508,14 @@ border-bottom: solid 1px hsl(180, 40%, 60%);\
 		var close = $(document.createElement('div')).addClass('doc-win-close').html('×');
 		var leftTitle = $(document.createElement('h2')).html('Documentation');
 		var title = $(document.createElement('div')).addClass('doc-win-title');
+		blackGround = $(document.createElement('div')).css({
+			'position': 'fixed',
+			'left': 0,
+			'right': 0,
+			'bottom': 0,
+			'top': 0,
+			'z-index': 1000
+		}).addClass('doc-win-blackground-hide');
 		
 		var core = $(document.createElement('div')).addClass('doc-win-core');
 		sidebar = $(document.createElement('div')).addClass('doc-win-sidebar');
@@ -540,11 +552,18 @@ border-bottom: solid 1px hsl(180, 40%, 60%);\
 		document.addEventListener('keydown', function(e) {
 			if(e.altKey && e.ctrlKey && e.keyCode == 68) {
 				win.toggleClass('doc-hide');
+				blackGround.toggleClass('doc-win-blackground-hide');
 			}
 		});
 		
 		close[0].addEventListener('click', function() {
 			win.toggleClass('doc-hide');
+			blackGround.toggleClass('doc-win-blackground-hide');
+		});
+
+		blackGround[0].addEventListener('click', function() {
+			win.toggleClass('doc-hide');
+			blackGround.toggleClass('doc-win-blackground-hide');
 		});
 
 		$(searchBox.find('input')).bind('keyup', function() {
@@ -573,6 +592,7 @@ border-bottom: solid 1px hsl(180, 40%, 60%);\
 		genSymblTable();
 		
 		document.body.appendChild(win[0]);
+		document.body.appendChild(blackGround[0]);
 	}
 	
 	// récupération des différentes catégories : _.get('function/get-categories', function(data) {console.log(data);})
