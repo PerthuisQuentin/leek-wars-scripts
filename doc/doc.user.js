@@ -588,8 +588,8 @@ border-bottom: solid 1px hsl(180, 40%, 60%);\
 	Prism.languages.clike={comment:[{pattern:/(^|[^\\])\/\*[\w\W]*?\*\//,lookbehind:!0},{pattern:/(^|[^\\:])\/\/.*/,lookbehind:!0}],string:{pattern:/(["'])(\\(?:\r\n|[\s\S])|(?!\1)[^\\\r\n])*\1/,greedy:!0},"class-name":{pattern:/((?:\b(?:class|interface|extends|implements|trait|instanceof|new)\s+)|(?:catch\s+\())[a-z0-9_\.\\]+/i,lookbehind:!0,inside:{punctuation:/(\.|\\)/}},keyword:/\b(if|else|while|do|for|return|in|instanceof|function|new|try|throw|catch|finally|null|break|continue)\b/,"boolean":/\b(true|false)\b/,"function":/[a-z0-9_]+(?=\()/i,number:/\b-?(?:0x[\da-f]+|\d*\.?\d+(?:e[+-]?\d+)?)\b/i,operator:/--?|\+\+?|!=?=?|<=?|>=?|==?=?|&&?|\|\|?|\?|\*|\/|~|\^|%/,punctuation:/[{}[\];(),.:]/};
 	Prism.languages.javascript=Prism.languages.extend("clike",{keyword:/\b(break|continue|do|else|for|function|if|in|null|return|var|global|while)\b/,number:/\b-?(0x[\dA-Fa-f]+|0b[01]+|0o[0-7]+|\d*\.?\d+([Ee][+-]?\d+)?|NaN|Infinity)\b/,"function":/[_$a-zA-Z\xA0-\uFFFF][_$a-zA-Z0-9\xA0-\uFFFF]*(?=\()/i}),Prism.languages.insertBefore("javascript","keyword",{regex:{pattern:/(^|[^\/])\/(?!\/)(\[.+?]|\\.|[^\/\\\r\n])+\/[gimyu]{0,5}(?=\s*($|[\r\n,.;})]))/,lookbehind:!0,greedy:!0}}),Prism.languages.insertBefore("javascript","class-name",{"template-string":{pattern:/`(?:\\\\|\\?[^\\])*?`/,greedy:!0,inside:{interpolation:{pattern:/\$\{[^}]+\}/,inside:{"interpolation-punctuation":{pattern:/^\$\{|\}$/,alias:"punctuation"},rest:Prism.languages.javascript}},string:/[\s\S]+/}}}),Prism.languages.markup&&Prism.languages.insertBefore("markup","tag",{script:{pattern:/(<script[\w\W]*?>)[\w\W]*?(?=<\/script>)/i,lookbehind:!0,inside:Prism.languages.javascript,alias:"language-javascript"}}),Prism.languages.js=Prism.languages.javascript;
 
-	var prismCSS = 'code[class*="language-"],\
-		pre[class*="language-"] {\
+	var prismCSS = '.doc-win code[class*="language-"],\
+		.doc-win pre[class*="language-"] {\
 			color: hsl(0, 0%, 80%);\
 			background: none;\
 			font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;\
@@ -607,99 +607,99 @@ border-bottom: solid 1px hsl(180, 40%, 60%);\
 			-ms-hyphens: none;\
 			hyphens: none;\
 		}\
-		pre[class*="language-"]::-moz-selection, pre[class*="language-"] ::-moz-selection,\
-		code[class*="language-"]::-moz-selection, code[class*="language-"] ::-moz-selection {\
+		.doc-win pre[class*="language-"]::-moz-selection, .doc-win pre[class*="language-"] ::-moz-selection,\
+		.doc-win code[class*="language-"]::-moz-selection, .doc-win code[class*="language-"] ::-moz-selection {\
 			text-shadow: none;\
 			background: #b3d4fc;\
 		}\
-		pre[class*="language-"]::selection, pre[class*="language-"] ::selection,\
-		code[class*="language-"]::selection, code[class*="language-"] ::selection {\
+		.doc-win pre[class*="language-"]::selection, .doc-win pre[class*="language-"] ::selection,\
+		.doc-win code[class*="language-"]::selection, .doc-win code[class*="language-"] ::selection {\
 			text-shadow: none;\
 			background: #b3d4fc;\
 		}\
 		@media print {\
-			code[class*="language-"],\
-			pre[class*="language-"] {\
+			.doc-win code[class*="language-"],\
+			.doc-win pre[class*="language-"] {\
 				text-shadow: none;\
 			}\
 		}\
 		/* Code blocks */\
-		pre[class*="language-"] {\
+		.doc-win pre[class*="language-"] {\
 			padding: 1em;\
 			margin: .5em 0;\
 			overflow: auto;\
 		}\
-		:not(pre) > code[class*="language-"],\
-		pre[class*="language-"] {\
+		.doc-win *:not(pre) > code[class*="language-"],\
+		.doc-win pre[class*="language-"] {\
 			background-color: hsl(0, 0%, 35%);\
 			border: solid 1px hsl(0, 0%,40%);\
 		}\
 		/* Inline code */\
-		:not(pre) > code[class*="language-"] {\
+		.doc-win *:not(pre) > code[class*="language-"] {\
 			padding: .1em;\
 			border-radius: .3em;\
 			white-space: normal;\
 		}\
-		.token.comment,\
-		.token.prolog,\
-		.token.doctype,\
-		.token.cdata {\
+		.doc-win .token.comment,\
+		.doc-win .token.prolog,\
+		.doc-win .token.doctype,\
+		.doc-win token.cdata {\
 			color: hsl(0, 0%, 60%);\
 			font-style: italic;\
 		}\
-		.token.punctuation {\
+		.doc-win .token.punctuation {\
 			color: #999;\
 		}\
-		.namespace {\
+		.doc-win .namespace {\
 			opacity: .7;\
 		}\
-		.token.property,\
-		.token.tag,\
-		.token.boolean,\
-		.token.number,\
-		.token.constant,\
-		.token.symbol,\
-		.token.deleted {\
+		.doc-win .token.property,\
+		.doc-win .token.tag,\
+		.doc-win .token.boolean,\
+		.doc-win .token.number,\
+		.doc-win .token.constant,\
+		.doc-win .token.symbol,\
+		.doc-win .token.deleted {\
 			color: hsl(160, 80%, 80%);\
 			font-weight: bold;\
 		}\
-		.token.selector,\
-		.token.attr-name,\
-		.token.string,\
-		.token.char,\
-		.token.builtin,\
-		.token.inserted {\
+		.doc-win .token.selector,\
+		.doc-win .token.attr-name,\
+		.doc-win .token.string,\
+		.doc-win .token.char,\
+		.doc-win .token.builtin,\
+		.doc-win .token.inserted {\
 			color: hsl(150, 50%, 90%);\
 		}\
-		.token.operator,\
-		.token.entity,\
-		.token.url,\
-		.language-css .token.string,\
-		.style .token.string {\
+		.doc-win .token.operator,\
+		.doc-win .token.entity,\
+		.doc-win .token.url,\
+		.doc-win .language-css .token.string,\
+		.doc-win .style .token.string {\
 			color: white;\
 		}\
-		.token.atrule,\
-		.token.attr-value,\
-		.token.keyword {\
+		.doc-win .token.atrule,\
+		.doc-win .token.attr-value,\
+		.doc-win .token.keyword {\
 			color: hsl(180, 70%, 70%);\
 			font-weight: bold;\
 		}\
-		.token.function {\
+		.doc-win .token.function {\
 			color: hsl(180, 50%, 70%);\
 		}\
-		.token.regex,\
-		.token.important,\
-		.token.variable {\
+		.doc-win .token.regex,\
+		.doc-win .token.important,\
+		.doc-win .token.variable {\
 			color: #e90;\
 		}\
-		.token.important,\
-		.token.bold {\
+		.doc-win .token.important,\
+		.doc-win .token.bold {\
 			font-weight: bold;\
 		}\
-		.token.italic {\
+		.doc-win .token.italic {\
 			font-style: italic;\
 		}\
-		.token.entity {\
+		.doc-win .token.entity {\
 			cursor: help;\
 		}';
 
