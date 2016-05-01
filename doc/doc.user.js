@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          [Leek Wars] Doc everywhere
 // @namespace     https://github.com/Ebatsin/Leek-Wars/
-// @version       1.0
+// @version       1.0.1
 // @description   Permet d'accéder à la documentation de n'importe quelle page
 // @author        Twilight
 // @projectPage   https://github.com/Ebatsin/Leek-Wars/
@@ -349,7 +349,6 @@ border-radius: 5px;\
 margin-top: 3.5em;\
 }\
 .doc-doc-item-title-deprecated {\
-float: left;\
 color: rgb(255, 187, 51);\
 margin-right: 0.5em;\
 font-weight: bold;\
@@ -453,7 +452,10 @@ font-weight: bold;\
 		var paramContent = $(document.createElement('ul')).addClass('doc-doc-item-params-content');
 
 		var rightBox = $(document.createElement('div')).addClass('doc-doc-item-right-box').html('<div><b>Niveau : </b> ' + func.level + '</div><div><b>Coût : </b>' + (func.operations >= 0 ? func.operations : 'variable') + '</div>');
-		
+
+		if(func.deprecated) {
+			funcValue.html(funcValue.html() + '<div class="doc-doc-item-title-deprecated">Dépréciée ! </div>');
+		}
 		funcValue.html(funcValue.html() + func.name + '(');
 		var sz = func.arguments_types.length - 1;
 		for(var i in func.arguments_types) {
@@ -482,9 +484,6 @@ font-weight: bold;\
 			funcValue.html(funcValue.html() + ' &#10140; ');
 			funcValue.append(type);
 			funcValue.append(name);
-		}
-		if(func.deprecated) {
-			funcValue.html(funcValue.html() + '<div class="doc-doc-item-title-deprecated">Dépréciée ! </div>');
 		}
 		
 		params.append(paramTitle);
