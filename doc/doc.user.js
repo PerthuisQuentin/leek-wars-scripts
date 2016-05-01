@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          [Leek Wars] Doc everywhere
 // @namespace     https://github.com/Ebatsin/Leek-Wars/
-// @version       0.4
+// @version       0.5
 // @description   Permet d'accéder à la documentation de n'importe quelle page
 // @author        Twilight
 // @projectPage   https://github.com/Ebatsin/Leek-Wars/
@@ -548,23 +548,42 @@ border-bottom: solid 1px hsl(180, 40%, 60%);\
 		
 		win.append(header);
 		win.append(core);
+
+		var inputElement;
+		var inputElementCaretPos;
+
+		function toggle() {			
+				win.toggleClass('doc-hide');
+				blackGround.toggleClass('doc-win-blackground-hide');
+				if(win.hasClass('doc-hide')) {
+					search.blur();
+					if(inputElement) {
+						inputElement.focus();
+						inputElement.setSelectionRange(inputElementCaretPos, inputElementCaretPos);
+					}
+				}
+				else {
+					inputElement = document.activeElement;
+					if(inputElement) {
+						inputElementCaretPos = inputElement.selectionStart;
+					}
+					search.focus();
+				}
+		}
 				
 		document.addEventListener('keydown', function(e) {
 			if(e.altKey && e.ctrlKey && e.keyCode == 68) {
-				win.toggleClass('doc-hide');
-				blackGround.toggleClass('doc-win-blackground-hide');
+				toggle();
+			}
+
+			if(!win.hasClass('doc-hide') && e.keyCode == 27) {
+				toggle();
 			}
 		});
 		
-		close[0].addEventListener('click', function() {
-			win.toggleClass('doc-hide');
-			blackGround.toggleClass('doc-win-blackground-hide');
-		});
+		close[0].addEventListener('click', toggle);
 
-		blackGround[0].addEventListener('click', function() {
-			win.toggleClass('doc-hide');
-			blackGround.toggleClass('doc-win-blackground-hide');
-		});
+		blackGround[0].addEventListener('click', toggle);
 
 		$(searchBox.find('input')).bind('keyup', function() {
 			regenWorker(function(data) {
