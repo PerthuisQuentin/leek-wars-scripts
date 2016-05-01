@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          [Leek Wars] Doc everywhere
 // @namespace     https://github.com/Ebatsin/Leek-Wars/
-// @version       1.0.1
+// @version       1.0.2
 // @description   Permet d'accéder à la documentation de n'importe quelle page
 // @author        Twilight
 // @projectPage   https://github.com/Ebatsin/Leek-Wars/
@@ -352,6 +352,7 @@ margin-top: 3.5em;\
 color: rgb(255, 187, 51);\
 margin-right: 0.5em;\
 font-weight: bold;\
+display: inline-block;\
 }";
 
 	var win, doc, sidebar, inMin, inMax, search, submit;
