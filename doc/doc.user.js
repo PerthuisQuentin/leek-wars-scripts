@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          [Leek Wars] Doc everywhere
 // @namespace     https://github.com/Ebatsin/Leek-Wars/
-// @version       0.5
+// @version       1.0
 // @description   Permet d'accéder à la documentation de n'importe quelle page
 // @author        Twilight
 // @projectPage   https://github.com/Ebatsin/Leek-Wars/
@@ -246,6 +246,8 @@ background-color: hsl(0, 0%, 80%);\
 border-bottom: solid 1px hsl(0, 0%, 50%);\
 margin: 1em 0;\
 padding-bottom: 1em;\
+position: relative;\
+min-height: 7.8em;\
 }\
 .doc-doc-item-title {\
 color: white;\
@@ -258,13 +260,16 @@ border-radius: 5px;\
 }\
 .doc-doc-item-param {\
 font-size: 1em;\
+width: calc(100% - 16em);\
 }\
 .doc-doc-item-returns {\
 font-size: 1em;\
+width: calc(100% - 16em);\
 }\
 .doc-doc-item-desc {\
 color: hsl(0, 0%, 80%);\
 margin: 0.8em 2.4em;\
+width: calc(100% - 16em);\
 }\
 .doc-doc-item-returns-title {\
 font-size: 1em;\
@@ -329,6 +334,25 @@ border-bottom: solid 1px transparent;\
 }\
 .doc-doc-item a:hover {\
 border-bottom: solid 1px hsl(180, 40%, 60%);\
+}\
+.doc-doc-item-right-box {\
+float: right;\
+position: absolute;\
+right: 2.4em;\
+width: 10em;\
+background-color: rgb(89, 89, 89);\
+border: 1px solid rgb(102, 102, 102);\
+color: rgb(204, 204, 204);\
+padding: 1em;\
+box-sizing: border-box;\
+border-radius: 5px;\
+margin-top: 3.5em;\
+}\
+.doc-doc-item-title-deprecated {\
+float: left;\
+color: rgb(255, 187, 51);\
+margin-right: 0.5em;\
+font-weight: bold;\
 }";
 
 	var win, doc, sidebar, inMin, inMax, search, submit;
@@ -427,6 +451,8 @@ border-bottom: solid 1px hsl(180, 40%, 60%);\
 			return '<a href="#doc-doc-' + i.substr(1) + '">' + i.substr(1) + '</a>';
 		}) : '');
 		var paramContent = $(document.createElement('ul')).addClass('doc-doc-item-params-content');
+
+		var rightBox = $(document.createElement('div')).addClass('doc-doc-item-right-box').html('<div><b>Niveau : </b> ' + func.level + '</div><div><b>Coût : </b>' + (func.operations >= 0 ? func.operations : 'variable') + '</div>');
 		
 		funcValue.html(funcValue.html() + func.name + '(');
 		var sz = func.arguments_types.length - 1;
@@ -457,15 +483,24 @@ border-bottom: solid 1px hsl(180, 40%, 60%);\
 			funcValue.append(type);
 			funcValue.append(name);
 		}
+		if(func.deprecated) {
+			funcValue.html(funcValue.html() + '<div class="doc-doc-item-title-deprecated">Dépréciée ! </div>');
+		}
 		
 		params.append(paramTitle);
 		params.append(paramContent);
 		returns.append(returnsTitle);
 		returns.append(returnsContent);
+		element.append(rightBox);
 		element.append(funcValue);
 		element.append(description);
-		element.append(params);
-		element.append(returns);
+		if(func.arguments_types.length > 0) {
+			element.append(params);			
+		}
+
+		if(func.return_type != 0) {
+			element.append(returns);
+		}
 		
 		return element;
 	}
