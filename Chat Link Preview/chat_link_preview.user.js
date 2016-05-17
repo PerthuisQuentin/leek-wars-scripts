@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name          [Leek Wars] Chat link preview
 // @namespace     https://github.com/Ebatsin/Leek-Wars/
-// @version       0.42
+// @version       0.43
 // @description   Permet d'afficher une preview des ressources linkées dans le chat
 // @author        Twilight
 // @projectPage   https://github.com/Ebatsin/Leek-Wars/
 // @downloadURL   https://github.com/Ebatsin/Leek-Wars/raw/master/Chat%20Link%20Preview/chat_link_preview.user.js
 // @updateURL     https://github.com/Ebatsin/Leek-Wars/raw/master/Chat%20Link%20Preview/chat_link_preview.user.js
-// @match         http://leekwars.com/*
+// @match         *://*.leekwars.com/*
 // @connect       *
 // @grant         GM_xmlhttpRequest
 // @grant         GM_addStyle

@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name          [Leek Wars] Doc everywhere
 // @namespace     https://github.com/Ebatsin/Leek-Wars/
-// @version       1.0.2
+// @version       1.0.3
 // @description   Permet d'accéder à la documentation de n'importe quelle page
 // @author        Twilight
 // @projectPage   https://github.com/Ebatsin/Leek-Wars/
 // @downloadURL   https://github.com/Ebatsin/Leek-Wars/raw/master/doc/doc.user.js
 // @updateURL     https://github.com/Ebatsin/Leek-Wars/raw/master/doc/doc.user.js
-// @match         http://leekwars.com/*
+// @match         *://*.leekwars.com/*
 // ==/UserScript==
 
 (function() {
