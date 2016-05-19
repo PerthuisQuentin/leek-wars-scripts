@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		  [Leek Wars] Multi-account manager
 // @namespace	 https://github.com/Ebatsin/Leek-Wars/
-// @version		0.4
+// @version		0.4.1
 // @description	Permet de passer facilement de comptes en comptes
 // @author		Twilight
 // @projectPage	https://github.com/Ebatsin/Leek-Wars/
@@ -24,7 +24,7 @@
 	}
 
 	function getCurrentPage() {
-		return (LW.currentPage === 'signup' || LW.currentPage === 'login') ? '/' : document.location.toString().replace('http://leekwars.com', '');
+		return (LW.currentPage === 'signup' || LW.currentPage === 'login') ? '/' : document.location.toString().replace(/https?://leekwars\.com/, '');
 	}
 
 	function genDropDown() {
@@ -43,7 +43,7 @@
 		var target = (LW.connected) ? $('#header-farmer div.button-wrapper:nth-child(6)') : $('#header-signin > div:nth-child(2)');
 
 		dropdown = $(document.createElement('div')).css({
-			position: 'absolute', border: 'solid 1px rgba(255, 255, 255, 0.4)', background: '#282828 url(http://leekwars.com/static/image/background.png)',
+			position: 'absolute', border: 'solid 1px rgba(255, 255, 255, 0.4)', background: '#282828 url(https://leekwars.com/static/image/background.png)',
 			'box-sizing': 'border-box', 'z-index': 9999, 'opacity': '0'
 		}).appendTo(target);
 
@@ -84,7 +84,7 @@
 
 				$(document.createElement('div')).css({
 					width: 'calc(1em + 25px)', height: 'calc(1em + 25px)', 'margin-top': '2px', 'margin-left': '2px',
-					background: 'url(http://leekwars.com/static/image//avatar/' + currentAccounts[i].id + '.png)',
+					background: 'url(https://leekwars.com/static/image//avatar/' + currentAccounts[i].id + '.png)',
 					'background-size': '100% 100%',
 					display: 'inline-block', 'float': 'left'
 				}).appendTo(current);
@@ -169,7 +169,7 @@
 
 	function getAccount(title, callback, data) {
 		var popin = $(document.createElement('div')).css({
-			width: '60%', position: 'fixed', left: '20%', top: '100px', background: '#282828 url(http://leekwars.com/static/image/background.png)', 'z-index': '3000'
+			width: '60%', position: 'fixed', left: '20%', top: '100px', background: '#282828 url(https://leekwars.com/static/image/background.png)', 'z-index': '3000'
 		});
 
 		var blackground = $(document.createElement('div')).css({
