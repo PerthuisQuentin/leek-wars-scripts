@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		  [Leek Wars] Multi-account manager
 // @namespace	 https://github.com/Ebatsin/Leek-Wars/
-// @version		0.4.1
+// @version		0.4.2
 // @description	Permet de passer facilement de comptes en comptes
 // @author		Twilight
 // @projectPage	https://github.com/Ebatsin/Leek-Wars/
@@ -24,7 +24,7 @@
 	}
 
 	function getCurrentPage() {
-		return (LW.currentPage === 'signup' || LW.currentPage === 'login') ? '/' : document.location.toString().replace(/https?://leekwars\.com/, '');
+		return (LW.currentPage === 'signup' || LW.currentPage === 'login') ? '/' : document.location.toString().replace(/https?:\/\/leekwars\.com/, '');
 	}
 
 	function genDropDown() {
