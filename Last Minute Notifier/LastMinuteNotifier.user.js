@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		  [Leek Wars] Last Minute Notifier
 // @namespace	 https://github.com/Ebatsin/Leek-Wars/
-// @version	   0.9.6
+// @version	   0.9.7
 // @description   Permet d'être averti quelques temps avant minuit si il reste des combats
 // @author		Twilight
 // @projectPage   https://github.com/Ebatsin/Leek-Wars/
@@ -164,7 +164,7 @@
 			   
 		// création du dropdown
 		pop.drop = $(document.createElement('div'))
-				.css({width: '70%', position: 'fixed', left: '15%', top: '-1000px', 'background-image': 'url("http://leekwars.com/static/image/background.png")', 'z-index': 2000, 'transition': 'ease 0.6s top'})
+				.css({width: '70%', position: 'fixed', left: '15%', top: '-1000px', 'background-image': 'url("https://leekwars.com/static/image/background.png")', 'z-index': 2000, 'transition': 'ease 0.6s top'})
 				.appendTo(document.body);
 		pop.title = $(document.createElement('div'))
 				.text(text.name)
