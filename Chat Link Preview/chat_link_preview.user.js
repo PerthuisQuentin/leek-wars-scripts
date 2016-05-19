@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          [Leek Wars] Chat link preview
 // @namespace     https://github.com/Ebatsin/Leek-Wars/
-// @version       0.43
+// @version       0.43.1
 // @description   Permet d'afficher une preview des ressources linkées dans le chat
 // @author        Twilight
 // @projectPage   https://github.com/Ebatsin/Leek-Wars/
@@ -249,7 +249,7 @@ function getMaxMediaHeight() {
 				'displayMethod': 'basic-image',
 				'data': {
 					'title': 'Prntscr - Image',
-					'url': imgUrl
+					'url': imgUrl.replace(/https?/, 'https')
 				}
 			};
 		},
