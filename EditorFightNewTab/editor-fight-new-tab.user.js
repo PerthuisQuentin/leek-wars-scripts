@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name           [Leek Wars] Editor-fight - new tab
 // @namespace      https://github.com/Ebatsin/Leek-Wars/
-// @version        0.2
+// @version        0.2.1
 // @description    Lance les tests dans un nouvel onglet
 // @author         Twilight
 // @projectPage    https://github.com/Ebatsin/Leek-Wars/
@@ -52,7 +52,7 @@
 					_testPopup.dismiss();
 					// create dummy link
 					var link = document.createElement('a');
-					link.setAttribute('href', 'http://leekwars.com/fight/' + data.fight);
+					link.setAttribute('href', 'https://leekwars.com/fight/' + data.fight);
 					link.setAttribute('target', '_blank');
 					link.style.position = "absolute";
 					link.style.left = "-1000px";
