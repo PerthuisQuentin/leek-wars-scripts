@@ -2,6 +2,10 @@
 // @name        [Leek Wars] Battle Royale Register
 // @namespace   https://github.com/Ebatsin/Leek-Wars/
 // @description Permet l'inscription automatique aux battle royales
+// @author        Ebatsin
+// @projectPage   https://github.com/Ebatsin/Leek-Wars/
+// @downloadURL   https://github.com/Ebatsin/Leek-Wars/raw/master/Battle%20Royale%20Register/battleroyaleregister.user.js
+// @updateURL     https://github.com/Ebatsin/Leek-Wars/raw/master/Battle%20Royale%20Register/battleroyaleregister.user.js
 // @match     *://*.leekwars.com/*
 // @version     0.1
 // @grant       none
