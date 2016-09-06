@@ -7,7 +7,7 @@
 // @downloadURL   https://github.com/Ebatsin/Leek-Wars/raw/master/Battle%20Royale%20Register/battleroyaleregister.user.js
 // @updateURL     https://github.com/Ebatsin/Leek-Wars/raw/master/Battle%20Royale%20Register/battleroyaleregister.user.js
 // @match     *://*.leekwars.com/*
-// @version     0.1
+// @version     0.2
 // @grant       none
 // ==/UserScript==
 
