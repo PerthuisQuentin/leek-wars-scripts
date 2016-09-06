@@ -3,7 +3,7 @@
 // @namespace   https://github.com/Ebatsin/Leek-Wars/
 // @description Permet l'inscription automatique aux battle royales
 // @match     *://*.leekwars.com/*
-// @version     1
+// @version     0.1
 // @grant       none
 // ==/UserScript==
 
