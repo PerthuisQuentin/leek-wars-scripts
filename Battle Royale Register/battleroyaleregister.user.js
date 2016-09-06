@@ -7,7 +7,7 @@
 // @downloadURL   https://github.com/Ebatsin/Leek-Wars/raw/master/Battle%20Royale%20Register/battleroyaleregister.user.js
 // @updateURL     https://github.com/Ebatsin/Leek-Wars/raw/master/Battle%20Royale%20Register/battleroyaleregister.user.js
 // @match     *://*.leekwars.com/*
-// @version     0.2
+// @version     0.3
 // @grant       none
 // ==/UserScript==
 
@@ -22,6 +22,7 @@
 			background: hsl(0, 0%, 95%);\
 			padding: 0.5em;\
 			box-shadow: 0 0 10px hsla(0, 0%, 0%, 0.34);\
+			z-index: 10;\
 		}\
 		.BRR-tooltip.hide {\
 			display: none;\
@@ -124,7 +125,7 @@
 			var li = document.createElement('li');
 			var a = document.createElement('a');
 			a.innerHTML = array[i].date;
-			a.href = 'fight/' + array[i].id;
+			a.href = '/fight/' + array[i].id;
 			li.appendChild(a);
 			elem.appendChild(li);
 		}
