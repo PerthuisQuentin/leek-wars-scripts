@@ -44,6 +44,7 @@
 		.BRR-tooltip > div > div:first-of-type div:first-of-type {\
 			display: inline-block;\
 			font-size: 1.3em;\
+			margin-right: 0.4em;\
 		}\
 		.BRR-tooltip > div > div:first-of-type div:last-of-type {\
 			color: gray;\
@@ -259,6 +260,7 @@
 									});
 									tmp[leek.id].splice(5); // keep only the last 5 BR
 									tmp.current = 0; // disable the leek
+									leeks[leek.id].active = false;
 									setLocalStorage(tmp);
 
 									genBrLinks(battleList, tmp[leek.id]);
