@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name           [Leek Wars] Editor-fight - new tab
 // @namespace      https://github.com/Ebatsin/Leek-Wars/
-// @version        0.3
+// @version        0.3.1
 // @description    Lance les tests dans un nouvel onglet
 // @author         Twilight
 // @projectPage    https://github.com/Ebatsin/Leek-Wars/
@@ -68,7 +68,8 @@
 		// application de notre event perso
 		clone.addEventListener('click', function() {
 			var data = {};
-			data.ai_id = _testAI;
+			var select = center.querySelector('#test-ais');
+			data.ai_id = select.options[select.selectedIndex].id;
 			data.leek_id = _testLeek;
 
 			data.bots = {};
