@@ -1,0 +1,35 @@
+IDÉES
+
+Folders :
+ - smoothness :
+ 	- Passer le resize de la sidebar via une animation frame
+ 	- Regarder pour ne redimensionner code-mirror que lorsque l'on relâche la sidebar
+ - demander si l'utilisateur veut récupérer l'ancienne session en cas de fermeture intempestive au lieu de le forcer
+ - rendre l'outil de syncronisation local portable vers mac
+ - syncronisation vers github : ne marche plus ?
+ - passer la syncronisation d'IA entre comptes dans le menu contextuel du fichier
+ - léger lag sur chrome lors du déplacement de dossier dans un dossier parent via drag & drop ?
+ - si dual panel apprécié, autoriser du multi-panel non limité en nombre
+ - chrome (encore lui...) ne semble pas toujours marché lorsqu'une même IA est ouverte dans 2 panels
+
+Doc everywhere :
+ - Chercher constante par valeur
+ - marché inclu
+ - stopper les touches clavier d'être remontées vers LW pour pas faire bugger /fight
+ - supprimer min/max et les niveaux
+ - Fixer la sidebar
+ - Empêcher le refresh lorsqu'on clique sur un lien
+ - un click sur un lien vers la doc dans le chat ouvre cet item dans doc everywhere (ne pas collisioner avec l'unfurler. Ou l'implémenter dans l'unfurler)
+ - 
+
+ Unfurler :
+  - Support de la documentation
+  - Support des liens du type doc:/function à l'envoi, changé en vrai lien, à la réception, reconverti en doc:/function pour que ceux qui ont le lien voient un ruc clean
+  - Snippets et import de document via cocaine ninja
+
+BR :
+ - Synchroniser plusieurs onglets pour pasa voir de problèmes
+ - désactiver la room de BR originale
+
+EditorFightNewTab :
+ - Aller directement au rapport

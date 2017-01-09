@@ -1,0 +1,4 @@
+Unfurler :
+	- Ajouter support des sites compatibles via https://noembed.com/
+	- Corriger la non fermeture des media embeddés
+	- 

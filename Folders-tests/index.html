@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Test</title>
+	<style type="text/css" media="screen">
+		.unselectable {
+			-webkit-user-select: none;
+			-moz-user-select: none;
+			user-select: none;
+		}
+
+		body, html {
+			padding: 0;
+			margin: 0;
+			background-color: hsl(0, 0%, 24%);
+		}
+		
+		.folders-popin {
+			background-color: hsl(0, 0%, 11%);
+			display: none;
+			position: fixed;
+			top: 80px;
+			transform: translateX(-50%);
+			left: 50%;
+			color: hsl(0, 0%, 80%);
+			text-shadow: 1px 1px black;
+			box-shadow: 0 0 17px hsla(0, 0%, 0%, 0.35);
+		}
+
+		.folders-popin > div:first-of-type {
+			padding: 0.7em 1.5em;
+			box-shadow: 0 5px hsla(0, 0%, 0%, 0.24);
+		}
+
+		.folders-popin > div:nth-child(2) {
+			background-color: hsl(0, 0%, 17%);
+			padding: 2em 3em;
+		}
+
+		.folders-popin > div:last-of-type {
+			list-style-type: none;
+			display: flex;
+			justify-content: flex-end;
+			margin: 0;
+		}
+
+		.folders-popin > div button {
+			background-color: hsl(0, 0%, 20%);
+			padding: 0.8em 2em;
+			border: none;
+			display: block;
+			cursor: pointer;
+			color: inherit;
+		}
+
+		.folders-popin > div button:hover, .folders-popin > div button:focus {
+			background-color: hsl(0, 0%, 25%);
+			color: hsl(0, 0%, 100%);
+			outline: 0;
+		}
+
+		.folders-popin button::-moz-focus-inner {
+			border: none;
+		}
+
+		.folders-popin.show {
+			display: block;
+		}
+
+	</style>
+</head>
+<body>
+
+	<script>
+		function PopIn() {
+			var self = this;
+
+			var _popin = document.createElement('div');
+			var _title = document.createElement('div');
+			var _msg = document.createElement('div');
+			var _controls = document.createElement('div');
+			var focus;
+
+			_popin.appendChild(_title);
+			_popin.appendChild(_msg);
+			_popin.appendChild(_controls);
+
+			_popin.classList.add("folders-popin");
+
+			document.body.appendChild(_popin);
+
+			this.set = function(data) {
+				_title.innerHTML = data.title || "Titre";
+				_msg.innerHTML = data.message || "";
+				_controls.innerHTML = "";
+				if(data.controls) {
+					for(var i in data.controls) {
+						var item = document.createElement("button");
+						item.classList.add('unselectable');
+						item.innerHTML = i;
+						(function(callback) {
+							item.addEventListener("click", function() {
+								self.hide();
+								callback();
+							});
+						})(data.controls[i]);
+						_controls.appendChild(item);
+						if(data.focus === i) {
+							focus = item;
+						}
+					}
+				}
+			};
+
+			this.show = function() {
+				_popin.classList.add('show');
+				if(focus) {
+					focus.focus();
+				}
+			};
+
+			this.hide = function() {
+				_popin.classList.remove('show');
+			};
+		}
+
+		var current = new PopIn();
+
+		current.set({
+			title: "Confirmation de la suppression",
+			message : "Êtes-vous sûr de vouloir supprimer cette IA ?<br>Cette action est irréversible.",
+			controls: {
+				'Supprimer': function() {
+					console.log('supprimé');
+				},
+				'Annuler': function() {
+					console.log('annulé');
+				}
+			},
+			focus: 'Annuler'
+		});
+
+		current.show();
+	</script>
+</body>
+</html>
