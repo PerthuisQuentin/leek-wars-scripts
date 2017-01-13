@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name		  [Leek Wars] Multi-account manager
-// @namespace	 https://github.com/Ebatsin/Leek-Wars/
+// @namespace	 https://github.com/PerthuisQuentin/Leek-Wars-Scripts/
 // @version		0.4.2
 // @description	Permet de passer facilement de comptes en comptes
 // @author		Twilight
-// @projectPage	https://github.com/Ebatsin/Leek-Wars/
-// @updateURL	 https://github.com/Ebatsin/Leek-Wars/raw/master/Multi%20Account%20Manager/MultiAccountManager.user.js
-// @downloadURL	https://github.com/Ebatsin/Leek-Wars/raw/master/Multi%20Account%20Manager/MultiAccountManager.user.js
+// @projectPage	https://github.com/PerthuisQuentin/Leek-Wars-Scripts/
+// @updateURL	 https://github.com/PerthuisQuentin/Leek-Wars-Scripts/raw/master/Multi%20Account%20Manager/MultiAccountManager.user.js
+// @downloadURL	https://github.com/PerthuisQuentin/Leek-Wars-Scripts/raw/master/Multi%20Account%20Manager/MultiAccountManager.user.js
 // @match		 *://*.leekwars.com/*
 // @grant		 none
 // ==/UserScript==
