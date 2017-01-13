@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name		  [Leek Wars] Last Minute Notifier
-// @namespace	 https://github.com/Ebatsin/Leek-Wars/
+// @namespace	 https://github.com/PerthuisQuentin/Leek-Wars-Scripts/
 // @version	   0.9.7
 // @description   Permet d'être averti quelques temps avant minuit si il reste des combats
 // @author		Twilight
-// @projectPage   https://github.com/Ebatsin/Leek-Wars/
-// @updateURL	 https://github.com/Ebatsin/Leek-Wars/raw/master/Last%20Minute%20Notifier/LastMinuteNotifier.user.js
-// @downloadURL   https://github.com/Ebatsin/Leek-Wars/raw/master/Last%20Minute%20Notifier/LastMinuteNotifier.user.js
+// @projectPage   https://github.com/PerthuisQuentin/Leek-Wars-Scripts/
+// @updateURL	 https://github.com/PerthuisQuentin/Leek-Wars-Scripts/raw/master/Last%20Minute%20Notifier/LastMinuteNotifier.user.js
+// @downloadURL   https://github.com/PerthuisQuentin/Leek-Wars-Scripts/raw/master/Last%20Minute%20Notifier/LastMinuteNotifier.user.js
 // @match		 *://*.leekwars.com/*
 // @grant		 none
 // ==/UserScript==
