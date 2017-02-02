@@ -12,19 +12,19 @@ if(!process.env.LW_PASSWORD) {
     process.exit(1);
 }
 
+var imgDir = JSON.parse(Fs.readFileSync('./config.json')).imgDir;
+
 const username = process.env.LW_USERNAME;
 const password = process.env.LW_PASSWORD;
 
 // Read the /img directory
-Fs.readdir('./img', (err, files) => {
-	if(!files.length) {
-		console.log('/img directory if empty.');
-		return;
-	}
+Fs.readdir(imgDir, (err, files) => {
+	if(err) return console.log(err);
+	if(!files.length) return console.log('/img directory if empty.');
 
 	var randFile = randomInt(0, files.length);
 
-	updateAvatar('./img/' + files[randFile]);
+	updateAvatar(imgDir + files[randFile]);
 });
 
 // Connect to Leek Wars and update the avatar
