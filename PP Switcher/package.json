@@ -1,0 +1,13 @@
+{
+	"name": "SwitchPP",
+	"version": "0.0.1",
+	"description": "Switch the pp on a Leek Wars account",
+	"main": "index.js",
+	"scripts": {
+		"start": "node index.js"
+	},
+	"dependencies": {
+		"request": "2.79.x",
+		"restler": "3.4.x"
+	}
+}
