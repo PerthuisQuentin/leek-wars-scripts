@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name          [Leek Wars] Doc everywhere
 // @namespace     https://github.com/PerthuisQuentin/Leek-Wars-Scripts/
-// @version       1.0.3
+// @version       1.0.4
 // @description   Permet d'accéder à la documentation de n'importe quelle page
 // @author        Twilight
 // @projectPage   https://github.com/PerthuisQuentin/Leek-Wars-Scripts/
@@ -100,31 +100,10 @@ background-color: hsl(0, 0%, 40%);\
 color: white;\
 font-size: 2em !important;\
 padding: 0 !important;\
-padding-left: 9em !important;\
+padding-left: 1em !important;\
 padding-right: 2.25em !important;\
 outline: none !important;\
 min-height: 0 !important;\
-}\
-\
-.doc-win-min,\
-.doc-win-max {\
-border: none !important;\
-transition: ease background-color 0.2s;\
-height: 2.333em;\
-width: 5.333em;\
-position: absolute;\
-box-sizing: border-box;\
-border-radius: 0;\
-border: none !important;\
-font-size: 1.5em !important;\
-min-height: 0 !important;\
-padding: 0 !important;\
-border-right: solid 1px hsl(0, 0%, 13%) !important;\
-background-color: hsl(0, 0%, 35%);\
-color: white;\
-text-align: center;\
-padding-top: 0.8em !important;\
-outline: none !important;\
 }\
 \
 .doc-win-max {\
@@ -452,7 +431,7 @@ display: inline-block;\
 		}) : '');
 		var paramContent = $(document.createElement('ul')).addClass('doc-doc-item-params-content');
 
-		var rightBox = $(document.createElement('div')).addClass('doc-doc-item-right-box').html('<div><b>Niveau : </b> ' + func.level + '</div><div><b>Coût : </b>' + (func.operations >= 0 ? func.operations : 'variable') + '</div>');
+		var rightBox = $(document.createElement('div')).addClass('doc-doc-item-right-box').html('<div><b>Coût : </b>' + (func.operations >= 0 ? func.operations : 'variable') + '</div>');
 
 		if(func.deprecated) {
 			funcValue.html(funcValue.html() + '<div class="doc-doc-item-title-deprecated">Dépréciée ! </div>');
@@ -556,10 +535,6 @@ display: inline-block;\
 		sidebar = $(document.createElement('div')).addClass('doc-win-sidebar');
 		var viewport = $(document.createElement('div')).addClass('doc-win-viewport');
 		var searchBox = $(document.createElement('div')).addClass('doc-win-search');
-		inMin = $(document.createElement('input')).addClass('doc-win-min').attr('required', true).attr('type', 'text');
-		inMax = $(document.createElement('input')).addClass('doc-win-max').attr('required', true).attr('type', 'text');
-		var labelMin = $(document.createElement('label')).addClass('doc-win-label-min').html('Min');
-		var labelMax = $(document.createElement('label')).addClass('doc-win-label-max').html('Max');
 		search = $(document.createElement('input')).addClass('doc-win-searchbar').attr('placeholder', 'Rechercher...').attr('type', 'text');
 		submit = $(document.createElement('div')).addClass('doc-win-submit');
 		doc = $(document.createElement('div')).addClass('doc-win-doc');
@@ -568,10 +543,6 @@ display: inline-block;\
 		header.append(leftTitle);
 		header.append(title);
 		
-		searchBox.append(inMin);
-		searchBox.append(labelMin);
-		searchBox.append(inMax);
-		searchBox.append(labelMax);
 		searchBox.append(search);
 		searchBox.append(submit);
 		
@@ -636,8 +607,8 @@ display: inline-block;\
 			ww.postMessage({
 				data: data,
 				cat: catData,
-				min: inMin.val().replace(/[ \t]/g, '').length > 0 ? parseInt(inMin.val()) : 1,
-				max: inMax.val().replace(/[ \t]/g, '').length > 0 ? parseInt(inMax.val()) : 301,
+				min: 1,
+				max: 301,
 				query: search.val()
 			});
 		});
