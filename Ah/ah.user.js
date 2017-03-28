@@ -18,7 +18,7 @@
         var next = LW.chat.receive;
 
         LW.chat.receive = function(data) {
-            if(data[3] === "Ah !") {
+            if(data[3] === "Ah !" || data[3] === "ah !" || data[3] === "ah!" || data[3] === "Ah!" || data[3] === "AH!" || data[3] === "AH !") {
                 audio.play();
             }
 
