@@ -15,7 +15,7 @@
 
     LW.on('pageload', function() {
         var audio_ah = new Audio('https://raw.githubusercontent.com/PerthuisQuentin/Leek-Wars-Scripts/master/Ah/ah.wav');
-        var audio_taisez_vous = new Audio('https://raw.githubusercontent.com/PerthuisQuentin/Leek-Wars-Scripts/master/Ah/taisez_vous.wav');
+        var audio_taisez_vous = new Audio('https://raw.githubusercontent.com/PerthuisQuentin/Leek-Wars-Scripts/master/Ah/taisez_vous.mp3');
         var next = LW.chat.receive;
 
         LW.chat.receive = function(data) {
