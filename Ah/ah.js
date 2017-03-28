@@ -5,8 +5,8 @@
 // @description  Déclenche un "Ah !" sonore lors d'un "Ah !" dans le chat
 // @author       TheTintin
 // @projectPage   https://github.com/PerthuisQuentin/Leek-Wars-Scripts/
-// @downloadURL   https://github.com/PerthuisQuentin/Leek-Wars-Scripts/
-// @updateURL     https://github.com/PerthuisQuentin/Leek-Wars-Scripts/
+// @downloadURL   https://github.com/PerthuisQuentin/Leek-Wars-Scripts/raw/master/Ah/ah.js
+// @updateURL     https://github.com/PerthuisQuentin/Leek-Wars-Scripts/raw/master/Ah/ah.js
 // @match         *://*.leekwars.com/*
 // ==/UserScript==
 
@@ -14,11 +14,12 @@
     'use strict';
 
     LW.on('pageload', function() {
+        var audio = new Audio('https://raw.githubusercontent.com/PerthuisQuentin/Leek-Wars-Scripts/master/Ah/ah.wav');
         var next = LW.chat.receive;
 
         LW.chat.receive = function(data) {
             if(data[3] === "Ah !") {
-                console.log("Ah !");
+                audio.play();
             }
 
             next(data);
