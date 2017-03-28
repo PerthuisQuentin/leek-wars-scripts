@@ -14,12 +14,17 @@
     'use strict';
 
     LW.on('pageload', function() {
-        var audio = new Audio('https://raw.githubusercontent.com/PerthuisQuentin/Leek-Wars-Scripts/master/Ah/ah.wav');
+        var audio_ah = new Audio('https://raw.githubusercontent.com/PerthuisQuentin/Leek-Wars-Scripts/master/Ah/ah.wav');
+        var audio_taisez_vous = new Audio('https://raw.githubusercontent.com/PerthuisQuentin/Leek-Wars-Scripts/master/Ah/taisez_vous.mp3');
         var next = LW.chat.receive;
 
         LW.chat.receive = function(data) {
             if(data[3] === "Ah !" || data[3] === "ah !" || data[3] === "ah!" || data[3] === "Ah!" || data[3] === "AH!" || data[3] === "AH !") {
-                audio.play();
+                audio_ah.play();
+            }
+            
+            if(data[3] === "Taisez-vous !" || data[3] === "taisez-vous !" || data[3] === "Taisez-vous" || data[3] === "taisez-vous"){
+                audio_taisez_vous.play();   
             }
 
             next(data);
