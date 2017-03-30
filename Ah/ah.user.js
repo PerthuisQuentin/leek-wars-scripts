@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         [Leek Wars] Ah !
 // @namespace    https://github.com/PerthuisQuentin/Leek-Wars-Scripts/
-// @version      0.3.2
+// @version      0.3.3
 // @description  Déclenche un "Ah !" sonore lors d'un "Ah !" dans le chat
 // @author       TheTintin
 // @projectPage   https://github.com/PerthuisQuentin/Leek-Wars-Scripts/
@@ -17,14 +17,14 @@
     var regex = new RegExp(/(ah\s?!)/ig);
 
     function check(message) {
-    	var count = message.match(regex).length;
-
-    	if(!count) return;
+    	var matches = message.match(regex);
+    	if(!matches) return;
+    	var count = matches.length;
 
         (function loop() {
-            audio.play(); 
-            count--;
-        	if(count > 0) setTimeout(loop, 500);
+			audio.play();
+			count--;
+			if(count > 0) setTimeout(loop, 500);
     	})();
     }
 
