@@ -1,9 +1,10 @@
 // ==UserScript==
 // @name		  [Leek Wars] Multi-account manager
 // @namespace	 https://github.com/PerthuisQuentin/Leek-Wars-Scripts/
-// @version		0.4.2
+// @version		0.4.3
 // @description	Permet de passer facilement de comptes en comptes
 // @author		Twilight
+// @updater 	Amal
 // @projectPage	https://github.com/PerthuisQuentin/Leek-Wars-Scripts/
 // @updateURL	 https://github.com/PerthuisQuentin/Leek-Wars-Scripts/raw/master/Multi%20Account%20Manager/MultiAccountManager.user.js
 // @downloadURL	https://github.com/PerthuisQuentin/Leek-Wars-Scripts/raw/master/Multi%20Account%20Manager/MultiAccountManager.user.js
@@ -69,7 +70,7 @@
 					}
 
 					setTimeout(function() { // ptit délais pour laisser le temps de revenir à l'écran de connexion
-						_.post('farmer/login', {login: currentAccounts[i].pseudo, password: currentAccounts[i].password}, function(data) {
+						_.post('farmer/login-token', {login: currentAccounts[i].pseudo, password: currentAccounts[i].password}, function(data) {
 							if(data.success) {
 								LW.connect(data.farmer, function() {
 									LW.page(currentLocation);
