@@ -70,7 +70,7 @@
 					}
 
 					setTimeout(function() { // ptit délais pour laisser le temps de revenir à l'écran de connexion
-						_.post('farmer/login-token', {login: currentAccounts[i].pseudo, password: currentAccounts[i].password}, function(data) {
+						_.post('farmer/login', {login: currentAccounts[i].pseudo, password: currentAccounts[i].password, keep_connected: true}, function(data) {
 							if(data.success) {
 								LW.connect(data.farmer, function() {
 									LW.page(currentLocation);
