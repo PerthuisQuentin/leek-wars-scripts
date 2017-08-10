@@ -208,7 +208,7 @@
     function submitf() {
       if(inputPassword.val().trim() !== '' && inputPseudo.val().trim() !== '') {
         // on récupère l'id de ce compte
-        _.post('farmer/login', {login: inputPseudo.val(), password: inputPassword.val()}, function(data) {
+        _.post('farmer/login', {login: inputPseudo.val(), password: inputPassword.val(), keep_connected: true}, function(data) {
           if(data.success) {
             callback({
               pseudo: inputPseudo.val(),
